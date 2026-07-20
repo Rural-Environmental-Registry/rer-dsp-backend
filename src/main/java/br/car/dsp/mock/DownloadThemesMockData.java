@@ -19,10 +19,10 @@ public final class DownloadThemesMockData {
 	private static final String LAST_UPDATE = "2026-06-01";
 
 	private static final List<DownloadThemeResponse> THEMES = List.of(
-			new DownloadThemeResponse("theme_alpha", "Tema Alpha", List.of("csv", "gpkg"), true),
-			new DownloadThemeResponse("theme_beta", "Tema Beta", List.of("csv", "gpkg"), true),
+			new DownloadThemeResponse("theme_alpha", "Tema Alpha", List.of("csv"), true),
+			new DownloadThemeResponse("theme_beta", "Tema Beta", List.of("csv"), true),
 			new DownloadThemeResponse("theme_gamma", "Tema Gamma", List.of("csv"), true),
-			new DownloadThemeResponse("theme_delta", "Tema Delta", List.of("csv", "gpkg"), false)
+			new DownloadThemeResponse("theme_delta", "Tema Delta", List.of("csv"), false)
 	);
 
 	private DownloadThemesMockData() {
@@ -68,7 +68,6 @@ public final class DownloadThemesMockData {
 	/**
 	 * Regras mock (substituíveis por checagem real de arquivo):
 	 * - theme_gamma: sempre coming_soon
-	 * - gpkg de theme_beta: unavailable
 	 * - demais formatos do catálogo: available quando há nível 2
 	 */
 	public static String resolveStatus(String themeCode, String format, String level2, String level3) {
@@ -78,10 +77,6 @@ public final class DownloadThemesMockData {
 		if ("theme_gamma".equalsIgnoreCase(themeCode)) {
 			return DownloadFormatStatus.COMING_SOON;
 		}
-		if ("gpkg".equalsIgnoreCase(format) && "theme_beta".equalsIgnoreCase(themeCode)) {
-			return DownloadFormatStatus.UNAVAILABLE;
-		}
-		// level3 só altera o nome do arquivo no mock
 		return DownloadFormatStatus.AVAILABLE;
 	}
 

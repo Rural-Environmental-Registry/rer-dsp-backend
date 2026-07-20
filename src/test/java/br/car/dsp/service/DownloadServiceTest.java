@@ -53,6 +53,7 @@ class DownloadServiceTest {
 		assertEquals("Tema Alpha", alpha.themeName());
 		assertTrue(alpha.formats().stream().anyMatch(format ->
 				"csv".equals(format.format()) && DownloadFormatStatus.AVAILABLE.equals(format.status())));
+		assertTrue(alpha.formats().stream().noneMatch(format -> "gpkg".equalsIgnoreCase(format.format())));
 		assertNotNull(alpha.lastUpdate());
 	}
 
@@ -84,9 +85,17 @@ class DownloadServiceTest {
 	void downloadFile_ShouldReturnNotFoundWhenUnavailable() {
 		ResponseStatusException exception = assertThrows(
 				ResponseStatusException.class,
-				() -> downloadService.downloadFile("DF", null, "theme_beta", "gpkg")
+				() -> downloadService.downloadFile("DF", null, "theme_gamma", "csv")
 		);
 
 		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getThemes_ShouldNotExposeGpkgFormat() {
+		List<DownloadThemeResponse> themes = downloadService.getThemes();
+
+		assertTrue(themes.stream().noneMatch(theme ->
+				theme.formats().stream().anyMatch(format -> "gpkg".equalsIgnoreCase(format))));
 	}
 }
