@@ -1,10 +1,14 @@
 package br.car.dsp.service;
 
-import br.car.dsp.dto.CityResponse;
-import br.car.dsp.dto.RegionResponse;
-import br.car.dsp.dto.StateResponse;
 import br.car.dsp.dto.TerritoryOptionResponse;
-import br.car.dsp.mock.LocationMockData;
+import br.car.dsp.model.TerritoryLevel1;
+import br.car.dsp.model.TerritoryLevel2;
+import br.car.dsp.model.TerritoryLevel3;
+import br.car.dsp.repository.TerritoryLevel1Repository;
+import br.car.dsp.repository.TerritoryLevel2Repository;
+import br.car.dsp.repository.TerritoryLevel3Repository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,48 +18,70 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Expõe opções territoriais por nível genérico (level1/2/3).
- * Internamente ainda usa o mock Brasil (região/UF/município).
+ * Exposes territorial options by generic level (level1/2/3) from the database.
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class TerritoryService {
+
+	private final TerritoryLevel1Repository level1Repository;
+	private final TerritoryLevel2Repository level2Repository;
+	private final TerritoryLevel3Repository level3Repository;
 
 	public List<TerritoryOptionResponse> getOptions(String level, String parentId) {
 		String normalized = normalizeLevel(level);
-		return switch (normalized) {
-			case "level1" -> getLevel1Options();
-			case "level2" -> getLevel2Options(parentId);
-			case "level3" -> getLevel3Options(parentId);
-			default -> throw new ResponseStatusException(
-					HttpStatus.BAD_REQUEST,
-					"Unsupported territory level: " + level
+		try {
+			return switch (normalized) {
+				case "level1" -> getLevel1Options();
+				case "level2" -> getLevel2Options(parentId);
+				case "level3" -> getLevel3Options(parentId);
+				default -> throw new ResponseStatusException(
+						HttpStatus.BAD_REQUEST,
+						"Unsupported territory level: " + level
+				);
+			};
+		} catch (ResponseStatusException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			log.error(
+					"Failed to query territory level={} parentId={}",
+					normalized,
+					parentId,
+					ex
 			);
-		};
+			throw new ResponseStatusException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					"Failed to query territory options",
+					ex
+			);
+		}
 	}
 
 	private List<TerritoryOptionResponse> getLevel1Options() {
-		return LocationMockData.getRegions().stream()
-				.sorted(Comparator.comparing(RegionResponse::name, String.CASE_INSENSITIVE_ORDER))
-				.map(region -> new TerritoryOptionResponse(String.valueOf(region.id()), region.name()))
+		return level1Repository.findAll().stream()
+				.sorted(Comparator.comparing(TerritoryLevel1::getName, String.CASE_INSENSITIVE_ORDER))
+				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getName()))
 				.toList();
 	}
 
 	private List<TerritoryOptionResponse> getLevel2Options(String parentId) {
+		List<TerritoryLevel2> units;
 		if (parentId == null || parentId.isBlank()) {
-			return LocationMockData.getAllStates().stream()
-					.sorted(Comparator.comparing(StateResponse::name, String.CASE_INSENSITIVE_ORDER))
-					.map(state -> new TerritoryOptionResponse(state.id(), formatStateLabel(state)))
-					.toList();
+			units = level2Repository.findAll();
+		} else {
+			if (!level1Repository.existsById(parentId)) {
+				throw new ResponseStatusException(
+						HttpStatus.NOT_FOUND,
+						"Territory parent not found: " + parentId
+				);
+			}
+			units = level2Repository.findByParent_Id(parentId);
 		}
 
-		RegionResponse region = findRegion(parentId);
-		List<StateResponse> states = region.states() != null && !region.states().isEmpty()
-				? region.states()
-				: LocationMockData.getStatesByRegionCode(region.code());
-
-		return states.stream()
-				.sorted(Comparator.comparing(StateResponse::name, String.CASE_INSENSITIVE_ORDER))
-				.map(state -> new TerritoryOptionResponse(state.id(), formatStateLabel(state)))
+		return units.stream()
+				.sorted(Comparator.comparing(TerritoryLevel2::getName, String.CASE_INSENSITIVE_ORDER))
+				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getName()))
 				.toList();
 	}
 
@@ -67,26 +93,10 @@ public class TerritoryService {
 			);
 		}
 
-		return LocationMockData.getCitiesByState(parentId).stream()
-				.sorted(Comparator.comparing(CityResponse::name, String.CASE_INSENSITIVE_ORDER))
-				.map(city -> new TerritoryOptionResponse(String.valueOf(city.id()), city.name()))
+		return level3Repository.findByParent_Id(parentId).stream()
+				.sorted(Comparator.comparing(TerritoryLevel3::getName, String.CASE_INSENSITIVE_ORDER))
+				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getName()))
 				.toList();
-	}
-
-	private RegionResponse findRegion(String parentId) {
-		return LocationMockData.getRegions().stream()
-				.filter(region ->
-						String.valueOf(region.id()).equals(parentId)
-								|| region.code().equalsIgnoreCase(parentId))
-				.findFirst()
-				.orElseThrow(() -> new ResponseStatusException(
-						HttpStatus.NOT_FOUND,
-						"Territory parent not found: " + parentId
-				));
-	}
-
-	private static String formatStateLabel(StateResponse state) {
-		return state.id() + " - " + state.name();
 	}
 
 	private static String normalizeLevel(String level) {

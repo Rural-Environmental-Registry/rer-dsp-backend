@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "Territory", description = "Opções territoriais genéricas (mock)")
+@Tag(name = "Territory", description = "Opções territoriais genéricas")
 public class TerritoryController implements TerritoryApi {
 
 	private final TerritoryService territoryService;
