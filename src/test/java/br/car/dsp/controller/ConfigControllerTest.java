@@ -1,5 +1,6 @@
 package br.car.dsp.controller;
 
+import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
 import br.car.dsp.dto.HierarchyLevelConfigResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
@@ -66,7 +67,8 @@ class ConfigControllerTest {
 								1,
 								true
 						))
-				)
+				),
+				AreaOfInterestMeasuresConfigResponse.defaults()
 		);
 		when(installationConfigService.getInstallationConfig()).thenReturn(expected);
 
@@ -78,6 +80,8 @@ class ConfigControllerTest {
 		assertEquals(5, result.kpis().maxCards());
 		assertEquals(PRIMARY_KPI_CODE, result.kpis().primaryCode());
 		assertEquals(PRIMARY_KPI_CODE, result.kpis().cards().getFirst().code());
+		assertEquals("ha", result.areaOfInterest().areaUnit());
+		assertEquals("ha", result.areaOfInterest().areaUnitLabel());
 		verify(installationConfigService).getInstallationConfig();
 	}
 }

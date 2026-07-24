@@ -97,5 +97,9 @@
         "required": false
       }
     ]
+  },
+  "areaOfInterest": {
+    "areaUnit": "ha",
+    "areaUnitLabel": "ha"
   }
 }

@@ -1,6 +1,7 @@
 package br.car.dsp.service;
 
 import br.car.dsp.config.InstallationConfigProperties;
+import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,8 @@ public class InstallationConfigService {
 		String location = properties.getFile();
 		log.info("Loading installation config from {}", location);
 		try (InputStream input = openStream(location)) {
-			return objectMapper.readValue(input, InstallationConfigResponse.class);
+			InstallationConfigResponse loaded = objectMapper.readValue(input, InstallationConfigResponse.class);
+			return normalizeAreaOfInterest(loaded);
 		} catch (IOException ex) {
 			log.error("Failed to load installation config from {}", location, ex);
 			throw new ResponseStatusException(
@@ -57,6 +59,43 @@ public class InstallationConfigService {
 					ex
 			);
 		}
+	}
+
+	private InstallationConfigResponse normalizeAreaOfInterest(InstallationConfigResponse loaded) {
+		AreaOfInterestMeasuresConfigResponse measures = loaded.areaOfInterest();
+		String unit = measures.areaUnit();
+		String label = measures.areaUnitLabel();
+
+		// Free-form unit; blank/missing must not fall back to "ha" (hides misconfiguration).
+		boolean unitMissing = unit == null || unit.isBlank();
+		if (unitMissing) {
+			log.warn(
+					"areaOfInterest.areaUnit is missing. Using placeholder '{}'.",
+					AreaOfInterestMeasuresConfigResponse.DEFAULT_UNIT
+			);
+			unit = AreaOfInterestMeasuresConfigResponse.DEFAULT_UNIT;
+		} else {
+			unit = unit.trim();
+		}
+		if (label == null || label.isBlank()) {
+			label = unitMissing
+					? AreaOfInterestMeasuresConfigResponse.DEFAULT_LABEL
+					: unit;
+		} else {
+			label = label.trim();
+		}
+
+		AreaOfInterestMeasuresConfigResponse normalized =
+				new AreaOfInterestMeasuresConfigResponse(unit, label);
+		if (normalized.equals(measures)) {
+			return loaded;
+		}
+		return new InstallationConfigResponse(
+				loaded.hierarchy(),
+				loaded.screens(),
+				loaded.kpis(),
+				normalized
+		);
 	}
 
 	private InputStream openStream(String location) throws IOException {
