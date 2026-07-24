@@ -1,0 +1,16 @@
+{
+  "baseMap": [
+    {
+      "name": "Esri Imagery",
+      "key": "esri",
+      "default": true,
+      "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+    },
+    {
+      "name": "OpenStreetMap",
+      "key": "osm",
+      "default": false,
+      "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    }
+  ]
+}
