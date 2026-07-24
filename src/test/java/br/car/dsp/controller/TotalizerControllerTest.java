@@ -1,6 +1,8 @@
 package br.car.dsp.controller;
 
 import br.car.dsp.dto.DetailByIdentifierResponse;
+import br.car.dsp.dto.TerritoryLevelRefResponse;
+import br.car.dsp.dto.TerritoryLevelsResponse;
 import br.car.dsp.dto.TotalizerFilterRequest;
 import br.car.dsp.dto.TotalizerResponse;
 import br.car.dsp.service.TotalizerService;
@@ -43,42 +45,33 @@ class TotalizerControllerTest {
 				"DF123456789012",
 				"-15.79",
 				"-47.88",
-				"-15.79, -47.88",
-				"DF",
-				"Distrito Federal",
-				"Brasília",
-				new BigDecimal("2.5"),
-				"10/01/2020",
-				"15/06/2024",
-				new BigDecimal("120.50"),
-				1001,
-				null
+				new TerritoryLevelsResponse(
+						new TerritoryLevelRefResponse("DF", "Distrito Federal"),
+						new TerritoryLevelRefResponse("5300108", "Brasília")
+				),
+				"2020-01-10",
+				"2024-06-15",
+				new BigDecimal("120.50")
 		);
 	}
 
 	@Test
 	void getTotalizerByStateOrCity_ShouldDelegateToService() {
-		// Given
 		when(totalizerService.getTotalizers(filter)).thenReturn(totalizers);
 
-		// When
 		List<TotalizerResponse> result = totalizerController.getTotalizerByStateOrCity(filter);
 
-		// Then
 		assertEquals(totalizers, result);
 		verify(totalizerService).getTotalizers(filter);
 	}
 
 	@Test
 	void getDetailsByIdentifier_ShouldDelegateToService() {
-		// Given
 		when(totalizerService.getDetailByIdentifier("DF123456789012")).thenReturn(detail);
 
-		// When
 		DetailByIdentifierResponse result =
 				totalizerController.getDetailsByIdentifier("DF123456789012");
 
-		// Then
 		assertEquals(detail, result);
 		verify(totalizerService).getDetailByIdentifier("DF123456789012");
 	}

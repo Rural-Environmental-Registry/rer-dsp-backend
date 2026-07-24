@@ -6,12 +6,16 @@ public record InstallationConfigResponse(
 		List<HierarchyLevelConfigResponse> hierarchy,
 		ScreensConfigResponse screens,
 		HomeKpisConfigResponse kpis,
-		AreaOfInterestMeasuresConfigResponse areaOfInterest
+		AreaOfInterestMeasuresConfigResponse areaOfInterest,
+		FormatsConfigResponse formats
 ) {
 
 	public InstallationConfigResponse {
 		if (areaOfInterest == null) {
 			areaOfInterest = AreaOfInterestMeasuresConfigResponse.defaults();
+		}
+		if (formats == null) {
+			formats = FormatsConfigResponse.defaults();
 		}
 	}
 }

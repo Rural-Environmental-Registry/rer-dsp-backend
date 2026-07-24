@@ -2,6 +2,7 @@ package br.car.dsp.service;
 
 import br.car.dsp.config.InstallationConfigProperties;
 import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
+import br.car.dsp.dto.FormatsConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class InstallationConfigService {
 		log.info("Loading installation config from {}", location);
 		try (InputStream input = openStream(location)) {
 			InstallationConfigResponse loaded = objectMapper.readValue(input, InstallationConfigResponse.class);
-			return normalizeAreaOfInterest(loaded);
+			return normalize(loaded);
 		} catch (IOException ex) {
 			log.error("Failed to load installation config from {}", location, ex);
 			throw new ResponseStatusException(
@@ -61,12 +62,28 @@ public class InstallationConfigService {
 		}
 	}
 
-	private InstallationConfigResponse normalizeAreaOfInterest(InstallationConfigResponse loaded) {
-		AreaOfInterestMeasuresConfigResponse measures = loaded.areaOfInterest();
+	private InstallationConfigResponse normalize(InstallationConfigResponse loaded) {
+		AreaOfInterestMeasuresConfigResponse measures = normalizeAreaOfInterest(loaded.areaOfInterest());
+		FormatsConfigResponse formats = normalizeFormats(loaded.formats());
+
+		if (measures.equals(loaded.areaOfInterest()) && formats.equals(loaded.formats())) {
+			return loaded;
+		}
+		return new InstallationConfigResponse(
+				loaded.hierarchy(),
+				loaded.screens(),
+				loaded.kpis(),
+				measures,
+				formats
+		);
+	}
+
+	private AreaOfInterestMeasuresConfigResponse normalizeAreaOfInterest(
+			AreaOfInterestMeasuresConfigResponse measures
+	) {
 		String unit = measures.areaUnit();
 		String label = measures.areaUnitLabel();
 
-		// Free-form unit; blank/missing must not fall back to "ha" (hides misconfiguration).
 		boolean unitMissing = unit == null || unit.isBlank();
 		if (unitMissing) {
 			log.warn(
@@ -85,17 +102,23 @@ public class InstallationConfigService {
 			label = label.trim();
 		}
 
-		AreaOfInterestMeasuresConfigResponse normalized =
-				new AreaOfInterestMeasuresConfigResponse(unit, label);
-		if (normalized.equals(measures)) {
-			return loaded;
+		return new AreaOfInterestMeasuresConfigResponse(unit, label);
+	}
+
+	private FormatsConfigResponse normalizeFormats(FormatsConfigResponse formats) {
+		String date = formats.date();
+		String dateTime = formats.dateTime();
+		if (date == null || date.isBlank()) {
+			date = FormatsConfigResponse.DEFAULT_DATE;
+		} else {
+			date = date.trim();
 		}
-		return new InstallationConfigResponse(
-				loaded.hierarchy(),
-				loaded.screens(),
-				loaded.kpis(),
-				normalized
-		);
+		if (dateTime == null || dateTime.isBlank()) {
+			dateTime = FormatsConfigResponse.DEFAULT_DATE_TIME;
+		} else {
+			dateTime = dateTime.trim();
+		}
+		return new FormatsConfigResponse(date, dateTime);
 	}
 
 	private InputStream openStream(String location) throws IOException {

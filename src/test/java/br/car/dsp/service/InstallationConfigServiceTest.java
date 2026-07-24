@@ -36,6 +36,10 @@ class InstallationConfigServiceTest {
 		assertEquals("REGISTERED_AREA", config.kpis().primaryCode());
 		assertEquals("ha", config.areaOfInterest().areaUnit());
 		assertEquals("ha", config.areaOfInterest().areaUnitLabel());
+		assertEquals("dd/MM/yyyy", config.formats().date());
+		assertEquals("dd/MM/yyyy HH:mm:ss", config.formats().dateTime());
+		assertEquals("Search details", config.screens().home().detail().sectionTitle());
+		assertEquals("Registration date", config.screens().home().detail().registrationDateLabel());
 		assertFalse(config.hierarchy().isEmpty());
 	}
 
@@ -48,9 +52,15 @@ class InstallationConfigServiceTest {
 
 		InstallationConfigResponse config = service.getInstallationConfig();
 
-		assertEquals("Continente", config.hierarchy().getFirst().label());
+		assertEquals("Região", config.hierarchy().getFirst().label());
+		assertEquals("Estado", config.hierarchy().get(1).label());
+		assertEquals("Município", config.hierarchy().get(2).label());
+		assertEquals("Identificador", config.screens().home().identifier().label());
+		assertEquals("Detalhes da consulta", config.screens().home().detail().sectionTitle());
+		assertEquals("Data de registro", config.screens().home().detail().registrationDateLabel());
 		assertEquals("ha", config.areaOfInterest().areaUnit());
 		assertEquals("ha", config.areaOfInterest().areaUnitLabel());
+		assertEquals("dd/MM/yyyy", config.formats().date());
 	}
 
 	@Test
@@ -79,5 +89,7 @@ class InstallationConfigServiceTest {
 
 		assertEquals("football_fields", config.areaOfInterest().areaUnit());
 		assertEquals("campos de futebol", config.areaOfInterest().areaUnitLabel());
+		assertEquals("yyyy-MM-dd", config.formats().date());
+		assertEquals("yyyy-MM-dd'T'HH:mm:ss", config.formats().dateTime());
 	}
 }

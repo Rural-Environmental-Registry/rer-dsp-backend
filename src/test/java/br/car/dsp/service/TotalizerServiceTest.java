@@ -3,66 +3,113 @@ package br.car.dsp.service;
 import br.car.dsp.dto.DetailByIdentifierResponse;
 import br.car.dsp.dto.TotalizerFilterRequest;
 import br.car.dsp.dto.TotalizerResponse;
-import org.junit.jupiter.api.BeforeEach;
+import br.car.dsp.model.AreaOfInterest;
+import br.car.dsp.model.TerritoryLevel2;
+import br.car.dsp.model.TerritoryLevel3;
+import br.car.dsp.repository.AreaOfInterestRepository;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+@ExtendWith(MockitoExtension.class)
 class TotalizerServiceTest {
 
-	private TotalizerService totalizerService;
+	@Mock
+	private AreaOfInterestRepository areaOfInterestRepository;
 
-	@BeforeEach
-	void setUp() {
-		totalizerService = new TotalizerService();
-	}
+	@InjectMocks
+	private TotalizerService totalizerService;
 
 	@Test
 	void getTotalizers_WhenFilterNull_ShouldReturnNationalTotalizers() {
-		// When
 		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
 
-		// Then
 		assertEquals(5, result.size());
 	}
 
 	@Test
 	void getTotalizers_WhenStateProvided_ShouldReturnFilteredTotalizers() {
-		// Given
 		TotalizerFilterRequest filter = new TotalizerFilterRequest();
 		filter.setIdState("DF");
 
-		// When
 		List<TotalizerResponse> result = totalizerService.getTotalizers(filter);
 
-		// Then
 		assertFalse(result.isEmpty());
 		assertNotNull(result.getFirst().name());
 	}
 
 	@Test
 	void getDetailByIdentifier_WhenKnown_ShouldReturnDetail() {
-		// When
-		DetailByIdentifierResponse result =
-				totalizerService.getDetailByIdentifier("DF123456789012");
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
 
-		// Then
-		assertEquals("DF123456789012", result.codeProperty());
-		assertEquals("Distrito Federal", result.nameState());
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertEquals("DF-123", result.id());
+		assertEquals("Distrito Federal", result.territory().level2().name());
+		assertEquals("Brasília", result.territory().level3().name());
+		assertEquals("DF", result.territory().level2().id());
+		assertEquals("5300108", result.territory().level3().id());
+		assertEquals("2020-01-10", result.registrationDate());
+		assertEquals("2024-06-15", result.alterationDate());
+		assertEquals(0, new BigDecimal("120.50").compareTo(result.area()));
+		assertNotNull(result.latitude());
+		assertNotNull(result.longitude());
 	}
 
 	@Test
 	void getDetailByIdentifier_WhenUnknown_ShouldThrowNotFound() {
-		// When & Then
+		when(areaOfInterestRepository.findById("UNKNOWN")).thenReturn(Optional.empty());
+
 		ResponseStatusException exception = assertThrows(
 				ResponseStatusException.class,
 				() -> totalizerService.getDetailByIdentifier("UNKNOWN")
 		);
 
 		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	private static AreaOfInterest buildSampleAreaOfInterest() {
+		TerritoryLevel2 level2 = new TerritoryLevel2();
+		level2.setId("DF");
+		level2.setName("Distrito Federal");
+
+		TerritoryLevel3 level3 = new TerritoryLevel3();
+		level3.setId("5300108");
+		level3.setName("Brasília");
+		level3.setParent(level2);
+
+		GeometryFactory factory = new GeometryFactory(new PrecisionModel(), 4674);
+		AreaOfInterest areaOfInterest = new AreaOfInterest();
+		areaOfInterest.setId("DF-123");
+		areaOfInterest.setRegistrationDate(LocalDateTime.of(2020, 1, 10, 8, 30));
+		areaOfInterest.setAlterationDate(LocalDateTime.of(2024, 6, 15, 14, 0));
+		areaOfInterest.setArea(new BigDecimal("120.50"));
+		areaOfInterest.setTerritoryLevel3(level3);
+		areaOfInterest.setGeometry(factory.createPolygon(new Coordinate[]{
+				new Coordinate(-47.9, -15.8),
+				new Coordinate(-47.8, -15.8),
+				new Coordinate(-47.8, -15.7),
+				new Coordinate(-47.9, -15.7),
+				new Coordinate(-47.9, -15.8)
+		}));
+		return areaOfInterest;
 	}
 }

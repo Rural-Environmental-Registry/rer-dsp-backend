@@ -1,6 +1,7 @@
 package br.car.dsp.controller;
 
 import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
+import br.car.dsp.dto.FormatsConfigResponse;
 import br.car.dsp.dto.HierarchyLevelConfigResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
@@ -43,11 +44,13 @@ class ConfigControllerTest {
 								null,
 								null,
 								null,
+								null,
 								null
 						),
 						new ScreenConfigResponse(
 								"Download public data",
 								List.of("level1", "level2", "level3"),
+								null,
 								null,
 								null,
 								null,
@@ -68,7 +71,8 @@ class ConfigControllerTest {
 								true
 						))
 				),
-				AreaOfInterestMeasuresConfigResponse.defaults()
+				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
+				FormatsConfigResponse.defaults()
 		);
 		when(installationConfigService.getInstallationConfig()).thenReturn(expected);
 
@@ -82,6 +86,7 @@ class ConfigControllerTest {
 		assertEquals(PRIMARY_KPI_CODE, result.kpis().cards().getFirst().code());
 		assertEquals("ha", result.areaOfInterest().areaUnit());
 		assertEquals("ha", result.areaOfInterest().areaUnitLabel());
+		assertEquals("yyyy-MM-dd", result.formats().date());
 		verify(installationConfigService).getInstallationConfig();
 	}
 }

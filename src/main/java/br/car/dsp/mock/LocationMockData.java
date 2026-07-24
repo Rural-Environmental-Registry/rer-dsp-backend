@@ -1,18 +1,15 @@
 package br.car.dsp.mock;
 
 import br.car.dsp.dto.CityResponse;
-import br.car.dsp.dto.DetailByIdentifierResponse;
 import br.car.dsp.dto.RegionResponse;
 import br.car.dsp.dto.StateResponse;
 import br.car.dsp.dto.TotalizerResponse;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Base em memória com amostra estilo Consulta Pública (UF / município / região / KPIs).
@@ -47,57 +44,6 @@ public final class LocationMockData {
 			region(5L, "Sul", "S")
 	);
 
-	private static final Map<String, DetailByIdentifierResponse> PROPERTIES_BY_CODE = Map.of(
-			"DF123456789012",
-			new DetailByIdentifierResponse(
-					"DF123456789012",
-					"-15.793889",
-					"-47.882778",
-					"-15.793889, -47.882778",
-					"DF",
-					"Distrito Federal",
-					"Brasília",
-					new BigDecimal("2.5"),
-					"10/01/2020",
-					"15/06/2024",
-					new BigDecimal("120.50"),
-					1001,
-					null
-			),
-			"GO998877665544",
-			new DetailByIdentifierResponse(
-					"GO998877665544",
-					"-16.686891",
-					"-49.264794",
-					"-16.686891, -49.264794",
-					"GO",
-					"Goiás",
-					"Goiânia",
-					new BigDecimal("4.0"),
-					"22/03/2019",
-					"01/02/2025",
-					new BigDecimal("340.00"),
-					1002,
-					null
-			),
-			"MG112233445566",
-			new DetailByIdentifierResponse(
-					"MG112233445566",
-					"-19.916681",
-					"-43.934493",
-					"-19.916681, -43.934493",
-					"MG",
-					"Minas Gerais",
-					"Belo Horizonte",
-					new BigDecimal("1.2"),
-					"05/11/2018",
-					"12/12/2023",
-					new BigDecimal("85.75"),
-					1003,
-					null
-			)
-	);
-
 	private LocationMockData() {
 	}
 
@@ -121,19 +67,6 @@ public final class LocationMockData {
 
 	public static List<RegionResponse> getRegions() {
 		return REGIONS;
-	}
-
-	public static Optional<DetailByIdentifierResponse> findByIdentifier(String identifier) {
-		if (identifier == null || identifier.isBlank()) {
-			return Optional.empty();
-		}
-		String normalized = identifier.replace(".", "").replace("-", "").trim().toUpperCase(Locale.ROOT);
-		return Optional.ofNullable(PROPERTIES_BY_CODE.get(normalized))
-				.or(() -> PROPERTIES_BY_CODE.entrySet().stream()
-						.filter(entry -> entry.getKey().equalsIgnoreCase(normalized)
-								|| entry.getValue().codeProperty().equalsIgnoreCase(identifier.trim()))
-						.map(Map.Entry::getValue)
-						.findFirst());
 	}
 
 	public static List<TotalizerResponse> buildTotalizers(String idState, List<Integer> idsCities) {

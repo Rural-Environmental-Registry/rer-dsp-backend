@@ -2,22 +2,13 @@ package br.car.dsp.dto;
 
 import java.math.BigDecimal;
 
-/**
- * Espelha DetailByIdentifier do Consulta Pública (+ centróide vindo do backend).
- */
 public record DetailByIdentifierResponse(
-		String codeProperty,
+		String id,
 		String latitude,
 		String longitude,
-		String geographicCoordinatesOfCentroid,
-		String idState,
-		String nameState,
-		String nameCity,
-		BigDecimal fiscalModules,
-		String createdAt,
-		String lastRectification,
-		BigDecimal haRegisteredArea,
-		Integer idOrigin,
-		String bounderBox
+		TerritoryLevelsResponse territory,
+		String registrationDate,
+		String alterationDate,
+		BigDecimal area
 ) {
 }

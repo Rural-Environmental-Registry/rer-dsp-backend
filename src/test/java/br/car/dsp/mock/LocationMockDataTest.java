@@ -1,14 +1,12 @@
 package br.car.dsp.mock;
 
 import br.car.dsp.dto.CityResponse;
-import br.car.dsp.dto.DetailByIdentifierResponse;
 import br.car.dsp.dto.RegionResponse;
 import br.car.dsp.dto.StateResponse;
 import br.car.dsp.dto.TotalizerResponse;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,21 +47,6 @@ class LocationMockDataTest {
 
 		assertEquals(5, regions.size());
 		assertFalse(regions.getFirst().states().isEmpty());
-	}
-
-	@Test
-	void findByIdentifier_WhenKnownCode_ShouldReturnDetail() {
-		Optional<DetailByIdentifierResponse> detail =
-				LocationMockData.findByIdentifier("DF123456789012");
-
-		assertTrue(detail.isPresent());
-		assertEquals("DF", detail.get().idState());
-		assertEquals("-15.793889, -47.882778", detail.get().geographicCoordinatesOfCentroid());
-	}
-
-	@Test
-	void findByIdentifier_WhenUnknown_ShouldReturnEmpty() {
-		assertTrue(LocationMockData.findByIdentifier("UNKNOWN").isEmpty());
 	}
 
 	@Test
