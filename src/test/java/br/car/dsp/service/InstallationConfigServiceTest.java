@@ -15,9 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class InstallationConfigServiceTest {
 
 	@Test
-	void getInstallationConfig_ShouldLoadEnglishLabelsFromClasspathJson() {
+	void getInstallationConfig_ShouldLoadEnglishLabelsFromTestFixture() {
 		InstallationConfigProperties properties = new InstallationConfigProperties();
-		properties.setFile("classpath:installationConfig.json");
+		properties.setFile("classpath:installation-config-test.json");
 
 		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
 

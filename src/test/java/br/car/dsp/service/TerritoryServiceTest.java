@@ -40,7 +40,7 @@ class TerritoryServiceTest {
 	void getOptions_Level1_ShouldReturnUnitsFromDatabase() {
 		TerritoryLevel1 unit = new TerritoryLevel1();
 		unit.setId("1");
-		unit.setName("Centro-Oeste");
+		unit.setLabel("Centro-Oeste");
 		when(level1Repository.findAll()).thenReturn(List.of(unit));
 
 		List<TerritoryOptionResponse> options = territoryService.getOptions("level1", null);
@@ -54,7 +54,7 @@ class TerritoryServiceTest {
 	void getOptions_Level2WithoutParent_ShouldReturnAllUnits() {
 		TerritoryLevel2 unit = new TerritoryLevel2();
 		unit.setId("DF");
-		unit.setName("Distrito Federal");
+		unit.setLabel("Distrito Federal");
 		when(level2Repository.findAll()).thenReturn(List.of(unit));
 
 		List<TerritoryOptionResponse> options = territoryService.getOptions("level2", null);
@@ -66,7 +66,7 @@ class TerritoryServiceTest {
 	void getOptions_Level2WithParent_ShouldReturnChildrenOfParent() {
 		TerritoryLevel2 df = new TerritoryLevel2();
 		df.setId("DF");
-		df.setName("Distrito Federal");
+		df.setLabel("Distrito Federal");
 		when(level1Repository.existsById("3")).thenReturn(true);
 		when(level2Repository.findByParent_Id("3")).thenReturn(List.of(df));
 
@@ -87,7 +87,7 @@ class TerritoryServiceTest {
 	void getOptions_Level3_ShouldReturnCities() {
 		TerritoryLevel3 city = new TerritoryLevel3();
 		city.setId("5300108");
-		city.setName("Brasília");
+		city.setLabel("Brasília");
 		when(level3Repository.findByParent_Id("DF")).thenReturn(List.of(city));
 
 		List<TerritoryOptionResponse> options = territoryService.getOptions("level3", "DF");

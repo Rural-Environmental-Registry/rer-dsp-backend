@@ -60,8 +60,8 @@ public class TerritoryService {
 
 	private List<TerritoryOptionResponse> getLevel1Options() {
 		return level1Repository.findAll().stream()
-				.sorted(Comparator.comparing(TerritoryLevel1::getName, String.CASE_INSENSITIVE_ORDER))
-				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getName()))
+				.sorted(Comparator.comparing(TerritoryLevel1::getLabel, String.CASE_INSENSITIVE_ORDER))
+				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getLabel()))
 				.toList();
 	}
 
@@ -80,8 +80,8 @@ public class TerritoryService {
 		}
 
 		return units.stream()
-				.sorted(Comparator.comparing(TerritoryLevel2::getName, String.CASE_INSENSITIVE_ORDER))
-				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getName()))
+				.sorted(Comparator.comparing(TerritoryLevel2::getLabel, String.CASE_INSENSITIVE_ORDER))
+				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getLabel()))
 				.toList();
 	}
 
@@ -94,8 +94,8 @@ public class TerritoryService {
 		}
 
 		return level3Repository.findByParent_Id(parentId).stream()
-				.sorted(Comparator.comparing(TerritoryLevel3::getName, String.CASE_INSENSITIVE_ORDER))
-				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getName()))
+				.sorted(Comparator.comparing(TerritoryLevel3::getLabel, String.CASE_INSENSITIVE_ORDER))
+				.map(unit -> new TerritoryOptionResponse(unit.getId(), unit.getLabel()))
 				.toList();
 	}
 
