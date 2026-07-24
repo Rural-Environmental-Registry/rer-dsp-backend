@@ -13,18 +13,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
 /**
- * Contratos compatíveis com o Consulta Pública (/totalizer/...).
- * Mantém o typo getDeatilsByIdentifier do sistema original.
+ * API for totalizers and details by identifier.
+ * Retains the getDetailsByIdentifier type from the original system (Public Inquiry).
  */
 @RequestMapping("/totalizer")
 public interface TotalizerApi {
 
 	@PostMapping(
-			value = "/getTotalizerByStateOrCity",
+			value = "/getTotalizers",
 			consumes = MediaType.APPLICATION_JSON_VALUE,
 			produces = MediaType.APPLICATION_JSON_VALUE
 	)
-	List<TotalizerResponse> getTotalizerByStateOrCity(@RequestBody TotalizerFilterRequest filter);
+	List<TotalizerResponse> getTotalizers(@RequestBody TotalizerFilterRequest filter);
 
 	@GetMapping(value = "/getDeatilsByIdentifier/{identifier}", produces = MediaType.APPLICATION_JSON_VALUE)
 	DetailByIdentifierResponse getDetailsByIdentifier(@PathVariable("identifier") String identifier);

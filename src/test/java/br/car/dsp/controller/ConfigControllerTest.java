@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ConfigControllerTest {
 
-	private static final String PRIMARY_KPI_CODE = "REGISTERED_AREA";
+	private static final String PRIMARY_KPI_CODE = "AREA_OF_INTEREST";
 
 	@Mock
 	private InstallationConfigService installationConfigService;

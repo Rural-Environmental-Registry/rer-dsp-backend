@@ -3,8 +3,8 @@ package br.car.dsp.dto;
 import java.util.List;
 
 /**
- * Configuração de filtros de uma tela.
- * Home: sempre 2 níveis. Downloads: sempre 3 níveis.
+ * Screen filter configuration.
+ * Home: always 2 levels. Downloads: always 3 levels.
  */
 public record ScreenConfigResponse(
 		String title,
@@ -13,6 +13,13 @@ public record ScreenConfigResponse(
 		ScreenFieldConfigResponse theme,
 		String level1SectionTitle,
 		String level2SectionTitle,
-		String filterByTitle
+		String filterByTitle,
+		HomeDetailSearchConfigResponse detail
 ) {
+
+	public ScreenConfigResponse {
+		if (detail == null) {
+			detail = HomeDetailSearchConfigResponse.defaults();
+		}
+	}
 }

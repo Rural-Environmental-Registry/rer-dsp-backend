@@ -35,10 +35,10 @@ class TotalizerControllerTest {
 	@BeforeEach
 	void setUp() {
 		filter = new TotalizerFilterRequest();
-		filter.setIdState("DF");
+		filter.setLevel2Id("DF");
 
 		totalizers = List.of(
-				new TotalizerResponse("Imóveis cadastrados", "REGISTERED_AREA", 10.0, "ha", 20L, "un.")
+				new TotalizerResponse("Imóveis cadastrados", "AREA_OF_INTEREST", 10.0, "ha", 20L, "un.")
 		);
 
 		detail = new DetailByIdentifierResponse(
@@ -56,10 +56,10 @@ class TotalizerControllerTest {
 	}
 
 	@Test
-	void getTotalizerByStateOrCity_ShouldDelegateToService() {
+	void getTotalizers_ShouldDelegateToService() {
 		when(totalizerService.getTotalizers(filter)).thenReturn(totalizers);
 
-		List<TotalizerResponse> result = totalizerController.getTotalizerByStateOrCity(filter);
+		List<TotalizerResponse> result = totalizerController.getTotalizers(filter);
 
 		assertEquals(totalizers, result);
 		verify(totalizerService).getTotalizers(filter);

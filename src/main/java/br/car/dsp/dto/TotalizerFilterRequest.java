@@ -3,27 +3,24 @@ package br.car.dsp.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Espelha SimpleFilterTotalizerDTO do Consulta Pública.
- */
 public class TotalizerFilterRequest {
 
-	private String idState;
-	private List<Integer> idsCities = new ArrayList<>();
+	private String level2Id;
+	private List<String> level3Ids = new ArrayList<>();
 
-	public String getIdState() {
-		return idState;
+	public String getLevel2Id() {
+		return level2Id;
 	}
 
-	public void setIdState(String idState) {
-		this.idState = idState;
+	public void setLevel2Id(String level2Id) {
+		this.level2Id = level2Id;
 	}
 
-	public List<Integer> getIdsCities() {
-		return idsCities;
+	public List<String> getLevel3Ids() {
+		return level3Ids;
 	}
 
-	public void setIdsCities(List<Integer> idsCities) {
-		this.idsCities = idsCities != null ? idsCities : new ArrayList<>();
+	public void setLevel3Ids(List<String> level3Ids) {
+		this.level3Ids = level3Ids != null ? level3Ids : new ArrayList<>();
 	}
 }

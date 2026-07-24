@@ -22,13 +22,13 @@ public class TotalizerController implements TotalizerApi {
 	}
 
 	@Override
-	@Operation(summary = "Totalizadores por UF e/ou municípios")
-	public List<TotalizerResponse> getTotalizerByStateOrCity(TotalizerFilterRequest filter) {
+	@Operation(summary = "Totalizers by territorial filter")
+	public List<TotalizerResponse> getTotalizers(TotalizerFilterRequest filter) {
 		return totalizerService.getTotalizers(filter);
 	}
 
 	@Override
-	@Operation(summary = "Detalhe por identificador (CAR)")
+	@Operation(summary = "Detail by identifier")
 	public DetailByIdentifierResponse getDetailsByIdentifier(String identifier) {
 		return totalizerService.getDetailByIdentifier(identifier);
 	}

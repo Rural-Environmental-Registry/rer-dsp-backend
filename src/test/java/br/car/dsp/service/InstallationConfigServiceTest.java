@@ -33,7 +33,7 @@ class InstallationConfigServiceTest {
 		assertEquals("Identifier", config.screens().home().identifier().label());
 		assertEquals("Theme", config.screens().downloads().theme().label());
 		assertEquals("Registered properties", config.kpis().cards().getFirst().label());
-		assertEquals("REGISTERED_AREA", config.kpis().primaryCode());
+		assertEquals("AREA_OF_INTEREST", config.kpis().primaryCode());
 		assertEquals("ha", config.areaOfInterest().areaUnit());
 		assertEquals("ha", config.areaOfInterest().areaUnitLabel());
 		assertEquals("dd/MM/yyyy", config.formats().date());
@@ -72,7 +72,7 @@ class InstallationConfigServiceTest {
 				{
 				  "hierarchy": [],
 				  "screens": { "home": null, "downloads": null },
-				  "kpis": { "maxCards": 1, "primaryCode": "REGISTERED_AREA", "cards": [] },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
 				  "areaOfInterest": {
 				    "areaUnit": "football_fields",
 				    "areaUnitLabel": "campos de futebol"

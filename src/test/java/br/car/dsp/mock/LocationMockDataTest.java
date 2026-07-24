@@ -54,7 +54,7 @@ class LocationMockDataTest {
 		List<TotalizerResponse> totalizers = LocationMockData.buildTotalizers(null, List.of());
 
 		assertEquals(5, totalizers.size());
-		assertEquals("REGISTERED_AREA", totalizers.getFirst().code());
+		assertEquals("AREA_OF_INTEREST", totalizers.getFirst().code());
 	}
 
 	@Test

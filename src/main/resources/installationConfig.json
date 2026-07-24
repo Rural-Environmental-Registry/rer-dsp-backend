@@ -59,10 +59,10 @@
   },
   "kpis": {
     "maxCards": 5,
-    "primaryCode": "REGISTERED_AREA",
+    "primaryCode": "AREA_OF_INTEREST",
     "cards": [
       {
-        "code": "REGISTERED_AREA",
+        "code": "AREA_OF_INTEREST",
         "label": "Registered properties",
         "unitOfMeasurement": "un.",
         "optionalLabel": "ha",

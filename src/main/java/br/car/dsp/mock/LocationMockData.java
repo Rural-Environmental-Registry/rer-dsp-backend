@@ -69,13 +69,13 @@ public final class LocationMockData {
 		return REGIONS;
 	}
 
-	public static List<TotalizerResponse> buildTotalizers(String idState, List<Integer> idsCities) {
+	public static List<TotalizerResponse> buildTotalizers(String level2Id, List<String> level3Ids) {
 		double factor = 1.0;
-		if (idState != null && !idState.isBlank()) {
+		if (level2Id != null && !level2Id.isBlank()) {
 			factor = 0.12;
 		}
-		if (idsCities != null && !idsCities.isEmpty()) {
-			factor = 0.03 * idsCities.size();
+		if (level3Ids != null && !level3Ids.isEmpty()) {
+			factor = 0.03 * level3Ids.size();
 		}
 
 		long properties = Math.round(128_450 * factor);
@@ -88,7 +88,7 @@ public final class LocationMockData {
 		List<TotalizerResponse> items = new ArrayList<>();
 		items.add(new TotalizerResponse(
 				"Imóveis cadastrados",
-				"REGISTERED_AREA",
+				"AREA_OF_INTEREST",
 				(double) properties,
 				"ha",
 				areaHa,
