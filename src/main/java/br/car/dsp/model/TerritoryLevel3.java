@@ -14,13 +14,13 @@ import lombok.Setter;
 import org.locationtech.jts.geom.Geometry;
 
 /**
- * Unidade territorial genérica — nível 3 (tabela dsp.level3 do core).
+ * Unidade territorial genérica — nível 3 (dsp.territory_level_3).
  */
 @Entity
 @Table(
 		schema = "dsp",
-		name = "level3",
-		indexes = @Index(name = "idx_dsp_level3_level2_id", columnList = "level2_id")
+		name = "territory_level_3",
+		indexes = @Index(name = "idx_territory_level_3_parent_id", columnList = "parent_id")
 )
 @Getter
 @Setter
@@ -30,14 +30,14 @@ public class TerritoryLevel3 {
 	@Column(name = "id", length = 64, nullable = false)
 	private String id;
 
-	@Column(name = "label", length = 255, nullable = false)
-	private String label;
+	@Column(name = "name", length = 255, nullable = false)
+	private String name;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@ManyToOne(fetch = FetchType.LAZY, optional = true)
 	@JoinColumn(
-			name = "level2_id",
-			nullable = false,
-			foreignKey = @ForeignKey(name = "dsp_level3_level2_id_fkey")
+			name = "parent_id",
+			nullable = true,
+			foreignKey = @ForeignKey(name = "fk_territory_level_3_parent")
 	)
 	private TerritoryLevel2 parent;
 

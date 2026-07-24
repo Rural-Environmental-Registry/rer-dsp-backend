@@ -9,10 +9,10 @@ import lombok.Setter;
 import org.locationtech.jts.geom.Geometry;
 
 /**
- * Unidade territorial genérica — nível 1 (tabela dsp.level1 do core).
+ * Unidade territorial genérica — nível 1 (dsp.territory_level_1).
  */
 @Entity
-@Table(schema = "dsp", name = "level1")
+@Table(schema = "dsp", name = "territory_level_1")
 @Getter
 @Setter
 public class TerritoryLevel1 {
@@ -21,8 +21,8 @@ public class TerritoryLevel1 {
 	@Column(name = "id", length = 64, nullable = false)
 	private String id;
 
-	@Column(name = "label", length = 255, nullable = false)
-	private String label;
+	@Column(name = "name", length = 255, nullable = false)
+	private String name;
 
 	@Column(name = "geometry", columnDefinition = "geometry")
 	private Geometry geometry;
