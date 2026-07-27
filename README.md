@@ -20,20 +20,23 @@ rer-dsp-frontend (UI)
     ↓
 rer-dsp-backend  ← ESTE REPO
     ↓
-rer-dsp-core (lógica de domínio)
+rer-dsp-core (instalação / config / Compose)
     ↓
 rer-dsp-job-data-migration (ETL)
 rer-dsp-job-geo-file-generation (geoespacial)
 ```
 
+A configuração de instalação (hierarquia, telas, KPIs) **não** fica neste repositório.
+Fonte: `rer-dsp-core/config/installation/installation-config.json` (env `DSP_INSTALLATION_CONFIG_FILE`).
+
 ## 🚀 Setup
 
-```bash
-# Clonar
-git clone https://github.com/Rural-Environmental-Registry/rer-dsp-backend.git
-cd rer-dsp-backend
+Preferível subir pela stack do core (`rer-dsp-core/./start.sh`).
 
-# Instruções de build serão adicionadas conforme desenvolvimento
+```bash
+# Dev local (layout irmão DSP/rer-dsp-core + DSP/rer-dsp-backend)
+./gradlew bootRun
+# usa por padrão: file:../rer-dsp-core/config/installation/installation-config.json
 ```
 
 ## 📖 Documentação

@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Tag(name = "Config", description = "Configuração da instalação (mock)")
+@Tag(name = "Config", description = "Configuração da instalação (arquivo do core)")
 public class ConfigController implements ConfigApi {
 
 	private final InstallationConfigService installationConfigService;
