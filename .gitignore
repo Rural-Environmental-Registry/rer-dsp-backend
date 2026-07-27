@@ -34,7 +34,3 @@ out/
 !gradlew
 !gradlew.bat
 !gradle/wrapper/gradle-wrapper.jar
-
-Dockerfile
-docker-compose.yml
-.dockerignore
