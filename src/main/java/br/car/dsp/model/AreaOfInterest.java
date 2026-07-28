@@ -13,10 +13,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
-import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
 
 /**
  * Generic area of interest (example: property).
+ * Full geometry lives in the GeoServer exhibition database.
  */
 @Entity
 @Table(
@@ -46,10 +48,13 @@ public class AreaOfInterest {
 	)
 	private TerritoryLevel3 territoryLevel3;
 
-	//Area migrated from source (media unit = installationConfig.areaOfInterest).
+	// Area migrated from source (media unit = installationConfig.areaOfInterest).
 	@Column(name = "area")
 	private BigDecimal area;
 
-	@Column(name = "geometry", columnDefinition = "geometry")
-	private Geometry geometry;
+	@Column(name = "boundary_box", columnDefinition = "geometry")
+	private Polygon boundaryBox;
+
+	@Column(name = "centroid_coordinates", columnDefinition = "geometry")
+	private Point centroidCoordinates;
 }

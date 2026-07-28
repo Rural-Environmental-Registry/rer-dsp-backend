@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -77,7 +76,7 @@ public class TotalizerService {
 		TerritoryLevel3 level3 = areaOfInterest.getTerritoryLevel3();
 		TerritoryLevel2 level2 = level3 != null ? level3.getParent() : null;
 
-		Centroid centroid = resolveCentroid(areaOfInterest.getGeometry());
+		Centroid centroid = resolveCentroid(areaOfInterest.getCentroidCoordinates());
 
 		return new DetailByIdentifierResponse(
 				areaOfInterest.getId(),
@@ -184,15 +183,14 @@ public class TotalizerService {
 		return value.toLocalDate().format(ISO_DATE);
 	}
 
-	private static Centroid resolveCentroid(Geometry geometry) {
-		if (geometry == null || geometry.isEmpty()) {
+	private static Centroid resolveCentroid(Point centroidCoordinates) {
+		if (centroidCoordinates == null || centroidCoordinates.isEmpty()) {
 			return Centroid.empty();
 		}
-		Point point = geometry.getCentroid();
-		if (point == null || point.isEmpty()) {
-			return Centroid.empty();
-		}
-		return new Centroid(formatCoordinate(point.getY()), formatCoordinate(point.getX()));
+		return new Centroid(
+				formatCoordinate(centroidCoordinates.getY()),
+				formatCoordinate(centroidCoordinates.getX())
+		);
 	}
 
 	private static String formatCoordinate(double value) {

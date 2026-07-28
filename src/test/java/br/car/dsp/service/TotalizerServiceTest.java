@@ -218,20 +218,16 @@ class TotalizerServiceTest {
 		level3.setName("Brasília");
 		level3.setParent(level2);
 
-		GeometryFactory factory = new GeometryFactory(new PrecisionModel(), 4674);
+		GeometryFactory factory = new GeometryFactory(new PrecisionModel(), 0);
 		AreaOfInterest areaOfInterest = new AreaOfInterest();
 		areaOfInterest.setId("DF-123");
 		areaOfInterest.setRegistrationDate(LocalDateTime.of(2020, 1, 10, 8, 30));
 		areaOfInterest.setAlterationDate(LocalDateTime.of(2024, 6, 15, 14, 0));
 		areaOfInterest.setArea(new BigDecimal("120.50"));
 		areaOfInterest.setTerritoryLevel3(level3);
-		areaOfInterest.setGeometry(factory.createPolygon(new Coordinate[]{
-				new Coordinate(-47.9, -15.8),
-				new Coordinate(-47.8, -15.8),
-				new Coordinate(-47.8, -15.7),
-				new Coordinate(-47.9, -15.7),
-				new Coordinate(-47.9, -15.8)
-		}));
+		areaOfInterest.setCentroidCoordinates(
+				factory.createPoint(new Coordinate(-47.85, -15.75))
+		);
 		return areaOfInterest;
 	}
 }
