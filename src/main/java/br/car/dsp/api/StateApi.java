@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
 /**
- * Contratos compatíveis com o Consulta Pública (/state/...).
+ * Contracts compatible with Consulta Pública (/state/...).
  */
 @RequestMapping("/state")
 public interface StateApi {

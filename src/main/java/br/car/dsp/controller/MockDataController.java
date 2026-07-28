@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/mock")
-@Tag(name = "Mock", description = "Dados mocados para teste local")
+@Tag(name = "Mock", description = "Mock data for local testing")
 public class MockDataController {
 
 	private final MockDataService mockDataService;
@@ -22,7 +22,7 @@ public class MockDataController {
 	}
 
 	@GetMapping("/items")
-	@Operation(summary = "Lista itens mocados")
+	@Operation(summary = "Lists mock items")
 	public List<MockItemResponse> listarItens() {
 		return mockDataService.listarItens();
 	}

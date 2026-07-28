@@ -3,7 +3,7 @@ package br.car.dsp.dto;
 import java.util.List;
 
 /**
- * Linha da tabela de Downloads (tema + formatos + última atualização).
+ * Downloads table row (theme + formats + last update).
  */
 public record DownloadItemResponse(
 		String themeCode,

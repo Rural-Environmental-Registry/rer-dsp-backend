@@ -14,7 +14,7 @@ import lombok.Setter;
 import org.locationtech.jts.geom.Geometry;
 
 /**
- * Unidade territorial genérica — nível 3 (dsp.territory_level_3).
+ * Generic territorial unit — level 3 (dsp.territory_level_3).
  */
 @Entity
 @Table(

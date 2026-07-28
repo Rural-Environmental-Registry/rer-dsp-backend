@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "Downloads", description = "Temas e arquivos para download (mock — sem S3/GeoServer)")
+@Tag(name = "Downloads", description = "Themes and files for download (mock — no S3/GeoServer)")
 public class DownloadController implements DownloadApi {
 
 	private final DownloadService downloadService;
@@ -23,19 +23,19 @@ public class DownloadController implements DownloadApi {
 	}
 
 	@Override
-	@Operation(summary = "Lista temas habilitados")
+	@Operation(summary = "Lists enabled themes")
 	public List<DownloadThemeResponse> getThemes() {
 		return downloadService.getThemes();
 	}
 
 	@Override
-	@Operation(summary = "Busca itens de download por hierarquia e tema")
+	@Operation(summary = "Searches download items by hierarchy and theme")
 	public List<DownloadItemResponse> search(DownloadSearchRequest request) {
 		return downloadService.search(request);
 	}
 
 	@Override
-	@Operation(summary = "Baixa arquivo mock do tema/formato")
+	@Operation(summary = "Downloads a mock file for theme/format")
 	public ResponseEntity<byte[]> downloadFile(String level2, String level3, String theme, String format) {
 		return downloadService.downloadFile(level2, level3, theme, format);
 	}

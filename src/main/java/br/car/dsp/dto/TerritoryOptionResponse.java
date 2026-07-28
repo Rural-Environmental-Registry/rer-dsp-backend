@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Opção genérica de um nível territorial (id + nome exibido).
+ * Generic option for a territorial level (id + display name).
  */
 public record TerritoryOptionResponse(
 		String id,

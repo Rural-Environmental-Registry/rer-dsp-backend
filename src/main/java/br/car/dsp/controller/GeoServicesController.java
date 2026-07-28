@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "GeoServices", description = "Regiões com UFs (mock — contrato Consulta Pública)")
+@Tag(name = "GeoServices", description = "Regions with UFs (mock — Consulta Pública contract)")
 public class GeoServicesController implements GeoServicesApi {
 
 	private final GeoServicesService geoServicesService;
@@ -20,7 +20,7 @@ public class GeoServicesController implements GeoServicesApi {
 	}
 
 	@Override
-	@Operation(summary = "Lista regiões com estados")
+	@Operation(summary = "Lists regions with states")
 	public List<RegionResponse> getRegions() {
 		return geoServicesService.getRegions();
 	}

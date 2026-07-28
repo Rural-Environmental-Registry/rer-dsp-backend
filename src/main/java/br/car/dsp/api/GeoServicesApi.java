@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
 /**
- * Contratos compatíveis com o Consulta Pública (/geoServices/...).
+ * Contracts compatible with Consulta Pública (/geoServices/...).
  */
 @RequestMapping("/geoServices")
 public interface GeoServicesApi {

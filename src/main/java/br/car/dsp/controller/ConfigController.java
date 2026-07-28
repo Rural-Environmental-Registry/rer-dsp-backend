@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Tag(name = "Config", description = "Configuração da instalação (arquivo do core)")
+@Tag(name = "Config", description = "Installation configuration (core file)")
 public class ConfigController implements ConfigApi {
 
 	private final InstallationConfigService installationConfigService;
@@ -18,7 +18,7 @@ public class ConfigController implements ConfigApi {
 	}
 
 	@Override
-	@Operation(summary = "Retorna hierarquia, labels e filtros por tela")
+	@Operation(summary = "Returns hierarchy, labels, and per-screen filters")
 	public InstallationConfigResponse getInstallationConfig() {
 		return installationConfigService.getInstallationConfig();
 	}

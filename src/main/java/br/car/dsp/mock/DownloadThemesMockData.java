@@ -11,7 +11,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Catálogo mock de temas e regra simples de disponibilidade de arquivo.
+ * Mock theme catalog and simple file-availability rule.
  * Depois: config externa / admin; entrega via S3 ou GeoServer.
  */
 public final class DownloadThemesMockData {
@@ -66,9 +66,9 @@ public final class DownloadThemesMockData {
 	}
 
 	/**
-	 * Regras mock (substituíveis por checagem real de arquivo):
+	 * Mock rules (replaceable by real file checks):
 	 * - theme_gamma: sempre coming_soon
-	 * - demais formatos do catálogo: available quando há nível 2
+	 * - other catalog formats: available when level 2 is present
 	 */
 	public static String resolveStatus(String themeCode, String format, String level2, String level3) {
 		if (level2 == null || level2.isBlank()) {
@@ -83,7 +83,7 @@ public final class DownloadThemesMockData {
 	public static byte[] buildMockFileContent(String level2, String level3, String theme, String format) {
 		String cityPart = (level3 == null || level3.isBlank()) ? "" : level3;
 		String body = """
-				# Arquivo mock DSP (sem S3/GeoServer)
+				# DSP mock file (no S3/GeoServer)
 				level2=%s
 				level3=%s
 				theme=%s

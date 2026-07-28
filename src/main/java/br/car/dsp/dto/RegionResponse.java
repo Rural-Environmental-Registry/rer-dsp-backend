@@ -3,7 +3,7 @@ package br.car.dsp.dto;
 import java.util.List;
 
 /**
- * Espelha Region + states do Consulta Pública (geoServices/getRegions).
+ * Mirrors Consulta Pública Region + states (geoServices/getRegions).
  */
 public record RegionResponse(
 		Long id,

@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Espelha Totalizer do Consulta Pública.
+ * Mirrors Consulta Pública Totalizer.
  */
 public record TotalizerResponse(
 		String name,

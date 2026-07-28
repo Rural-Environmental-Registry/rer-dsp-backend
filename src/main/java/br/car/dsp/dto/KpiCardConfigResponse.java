@@ -1,8 +1,8 @@
 package br.car.dsp.dto;
 
 /**
- * Definição estrutural de um card de KPI (rótulos/unidades/cores).
- * Valores numéricos vêm dos totalizers; labels vêm daqui.
+ * Structural definition of a KPI card (labels/units/colors).
+ * Numeric values come from totalizers; labels come from here.
  */
 public record KpiCardConfigResponse(
 		String code,

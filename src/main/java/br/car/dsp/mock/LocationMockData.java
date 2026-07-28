@@ -12,7 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Base em memória com amostra estilo Consulta Pública (UF / município / região / KPIs).
+ * In-memory sample styled after Consulta Pública (UF / municipality / region / KPIs).
  */
 public final class LocationMockData {
 
