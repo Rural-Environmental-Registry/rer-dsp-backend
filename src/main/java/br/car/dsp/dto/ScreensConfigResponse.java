@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Telas que consomem a hierarquia territorial.
+ * Screens that consume the territorial hierarchy.
  */
 public record ScreensConfigResponse(
 		ScreenConfigResponse home,

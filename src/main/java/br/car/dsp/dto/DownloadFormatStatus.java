@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Disponibilidade de um formato de arquivo para um tema.
+ * Availability of a file format for a theme.
  */
 public record DownloadFormatStatus(
 		String format,

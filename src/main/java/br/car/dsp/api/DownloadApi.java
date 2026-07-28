@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 /**
- * Catálogo e download de arquivos por tema (fase 1: mock local).
+ * Theme file catalog and download (phase 1: local mock).
  */
 @RequestMapping("/downloads")
 public interface DownloadApi {

@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Espelha StateDTO do Consulta Pública.
+ * Mirrors Consulta Pública StateDTO.
  */
 public record StateResponse(
 		String id,

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "Totalizer", description = "KPIs e detalhe por identificador (mock — contrato Consulta Pública)")
+@Tag(name = "Totalizer", description = "KPIs and detail by identifier (mock — Consulta Pública contract)")
 public class TotalizerController implements TotalizerApi {
 
 	private final TotalizerService totalizerService;

@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Nível territorial genérico da instalação (level1 / level2 / level3).
+ * Generic territorial level for the installation (level1 / level2 / level3).
  */
 public record HierarchyLevelConfigResponse(
 		String key,

@@ -3,7 +3,7 @@ package br.car.dsp.dto;
 import java.util.List;
 
 /**
- * Tema configurável para a tela de Downloads.
+ * Configurable theme for the Downloads screen.
  */
 public record DownloadThemeResponse(
 		String code,

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "Territory", description = "Opções territoriais genéricas")
+@Tag(name = "Territory", description = "Generic territorial options")
 public class TerritoryController implements TerritoryApi {
 
 	private final TerritoryService territoryService;
@@ -20,7 +20,7 @@ public class TerritoryController implements TerritoryApi {
 	}
 
 	@Override
-	@Operation(summary = "Lista opções de um nível (level1/level2/level3)")
+	@Operation(summary = "Lists options for a level (level1/level2/level3)")
 	public List<TerritoryOptionResponse> getOptions(String level, String parentId) {
 		return territoryService.getOptions(level, parentId);
 	}

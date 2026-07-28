@@ -15,7 +15,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 
 /**
- * Unidade territorial genérica — nível 3 (dsp.territory_level_3).
+ * Generic territorial unit — level 3 (dsp.territory_level_3).
  */
 @Entity
 @Table(

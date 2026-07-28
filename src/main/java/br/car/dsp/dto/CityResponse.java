@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Espelha CityDTO do Consulta Pública.
+ * Mirrors Consulta Pública CityDTO.
  */
 public record CityResponse(
 		Integer id,

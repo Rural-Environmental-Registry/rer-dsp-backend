@@ -3,16 +3,16 @@ package br.car.dsp.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Caminho do JSON de instalação (labels, telas, KPIs).
- * Fonte de verdade: rer-dsp-core/config/installation/installation-config.json
- * Aceita file:… ou caminho absoluto/relativo no filesystem.
+ * Path to the installation JSON (labels, screens, KPIs).
+ * Source of truth: rer-dsp-core/config/installation/installation-config.json
+ * Accepts file:… or an absolute/relative filesystem path.
  */
 @ConfigurationProperties(prefix = "dsp.installation-config")
 public class InstallationConfigProperties {
 
 	/**
-	 * Ex.: file:/config/installation-config.json (Compose)
-	 * ou file:../rer-dsp-core/config/installation/installation-config.json (local)
+	 * Example: file:/config/installation-config.json (Compose)
+	 * or file:../rer-dsp-core/config/installation/installation-config.json (local)
 	 */
 	private String file = "file:../rer-dsp-core/config/installation/installation-config.json";
 

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "State", description = "UFs e municípios (mock — contrato Consulta Pública)")
+@Tag(name = "State", description = "UFs and municipalities (mock — Consulta Pública contract)")
 public class StateController implements StateApi {
 
 	private final StateService stateService;
@@ -21,19 +21,19 @@ public class StateController implements StateApi {
 	}
 
 	@Override
-	@Operation(summary = "Lista todas as UFs")
+	@Operation(summary = "Lists all UFs")
 	public List<StateResponse> getAll() {
 		return stateService.getAllUf();
 	}
 
 	@Override
-	@Operation(summary = "Lista municípios por UF")
+	@Operation(summary = "Lists municipalities by UF")
 	public List<CityResponse> getCitiesByUf(String idState) {
 		return stateService.getCitiesByUfId(idState);
 	}
 
 	@Override
-	@Operation(summary = "Lista UFs por código de região")
+	@Operation(summary = "Lists UFs by region code")
 	public List<StateResponse> getUfsByRegion(String region) {
 		return stateService.getUfsByRegion(region);
 	}

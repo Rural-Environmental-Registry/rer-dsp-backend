@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 /**
- * Opções territoriais por nível genérico.
+ * Territorial options by generic level.
  */
 @RequestMapping("/territory")
 public interface TerritoryApi {

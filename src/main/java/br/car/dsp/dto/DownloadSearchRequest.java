@@ -1,7 +1,7 @@
 package br.car.dsp.dto;
 
 /**
- * Filtro da busca de downloads (níveis hierárquicos + tema opcional).
+ * Download search filter (hierarchy levels + optional theme).
  */
 public class DownloadSearchRequest {
 

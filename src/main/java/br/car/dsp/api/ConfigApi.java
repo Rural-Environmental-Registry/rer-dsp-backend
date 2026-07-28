@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
- * Configuração da instalação (hierarquia, labels e telas).
+ * Installation configuration (hierarchy, labels, and screens).
  */
 @RequestMapping("/config")
 public interface ConfigApi {
