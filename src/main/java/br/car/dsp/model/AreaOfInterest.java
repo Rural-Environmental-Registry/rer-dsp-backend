@@ -52,6 +52,22 @@ public class AreaOfInterest {
 	@Column(name = "area")
 	private BigDecimal area;
 
+	/** Optional KPI slot THEME_1 (label from installation-config). */
+	@Column(name = "theme_1")
+	private BigDecimal theme1;
+
+	/** Optional KPI slot THEME_2. */
+	@Column(name = "theme_2")
+	private BigDecimal theme2;
+
+	/** Optional KPI slot THEME_3. */
+	@Column(name = "theme_3")
+	private BigDecimal theme3;
+
+	/** Optional KPI slot THEME_4. */
+	@Column(name = "theme_4")
+	private BigDecimal theme4;
+
 	@Column(name = "boundary_box", columnDefinition = "geometry")
 	private Polygon boundaryBox;
 

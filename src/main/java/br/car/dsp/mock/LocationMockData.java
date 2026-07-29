@@ -95,32 +95,32 @@ public final class LocationMockData {
 				"un."
 		));
 		items.add(new TotalizerResponse(
-				"Reserva Legal",
-				"LEGAL_RESERVE",
+				"Theme 1",
+				"THEME_1",
 				(double) legalReserve,
 				null,
 				null,
 				"ha"
 		));
 		items.add(new TotalizerResponse(
-				"Área de Preservação Permanente",
-				"PERMANENT_PRESERVATION_AREA",
+				"Theme 2",
+				"THEME_2",
 				(double) app,
 				null,
 				null,
 				"ha"
 		));
 		items.add(new TotalizerResponse(
-				"Vegetação Nativa",
-				"NATIVE_VEGETATION",
+				"Theme 3",
+				"THEME_3",
 				(double) nativeVeg,
 				null,
 				null,
 				"ha"
 		));
 		items.add(new TotalizerResponse(
-				"Área Consolidada",
-				"CONSOLIDATED_AREA",
+				"Theme 4",
+				"THEME_4",
 				(double) consolidated,
 				null,
 				null,

@@ -6,6 +6,7 @@ import br.car.dsp.dto.DetailByIdentifierResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
 import br.car.dsp.dto.KpiCardConfigResponse;
+import br.car.dsp.dto.ThemeTotalsAggregate;
 import br.car.dsp.dto.TotalizerFilterRequest;
 import br.car.dsp.dto.TotalizerResponse;
 import br.car.dsp.model.AreaOfInterest;
@@ -52,31 +53,50 @@ class TotalizerServiceTest {
 	@BeforeEach
 	void stubDefaultInstallationConfig() {
 		lenient().when(installationConfigService.getInstallationConfig())
-				.thenReturn(installationConfig(
+				.thenReturn(installationConfigWithThemes(
 						"Registered properties",
 						"un.",
 						"ha"
 				));
+		lenient().when(areaOfInterestRepository.sumThemesAll())
+				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+		lenient().when(areaOfInterestRepository.sumThemesByLevel2Id(org.mockito.ArgumentMatchers.anyString()))
+				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+		lenient().when(areaOfInterestRepository.sumThemesByLevel3Ids(anyCollection()))
+				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
 	}
 
 	@Test
 	void getTotalizers_WhenFilterNull_ShouldUseRealAreaOfInterestAggregate() {
 		when(areaOfInterestRepository.aggregateAll())
 				.thenReturn(aggregate(508L, new BigDecimal("160652.4")));
+		when(areaOfInterestRepository.sumThemesAll())
+				.thenReturn(themes(
+						new BigDecimal("10.4"),
+						new BigDecimal("20.6"),
+						BigDecimal.ZERO,
+						new BigDecimal("5")
+				));
 
 		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
 
 		assertEquals(5, result.size());
-		TotalizerResponse primary = result.stream()
-				.filter(item -> TotalizerService.CODE_AREA_OF_INTEREST.equals(item.code()))
-				.findFirst()
-				.orElseThrow();
+		TotalizerResponse primary = result.getFirst();
+		assertEquals(TotalizerService.CODE_AREA_OF_INTEREST, primary.code());
 		assertEquals("Registered properties", primary.name());
 		assertEquals(508.0, primary.value());
 		assertEquals(160652L, primary.subItemValue());
 		assertEquals("un.", primary.unitOfMeasurement());
 		assertEquals("ha", primary.subItemName());
+
+		assertEquals(TotalizerService.CODE_THEME_1, result.get(1).code());
+		assertEquals(10.0, result.get(1).value());
+		assertEquals(TotalizerService.CODE_THEME_2, result.get(2).code());
+		assertEquals(21.0, result.get(2).value());
+		assertEquals(0.0, result.get(3).value());
+		assertEquals(5.0, result.get(4).value());
 		verify(areaOfInterestRepository).aggregateAll();
+		verify(areaOfInterestRepository).sumThemesAll();
 	}
 
 	@Test
@@ -89,13 +109,11 @@ class TotalizerServiceTest {
 
 		List<TotalizerResponse> result = totalizerService.getTotalizers(filter);
 
-		TotalizerResponse primary = result.stream()
-				.filter(item -> TotalizerService.CODE_AREA_OF_INTEREST.equals(item.code()))
-				.findFirst()
-				.orElseThrow();
+		TotalizerResponse primary = result.getFirst();
 		assertEquals(12.0, primary.value());
 		assertEquals(101L, primary.subItemValue());
 		verify(areaOfInterestRepository).aggregateByLevel2Id("DF");
+		verify(areaOfInterestRepository).sumThemesByLevel2Id("DF");
 	}
 
 	@Test
@@ -109,19 +127,17 @@ class TotalizerServiceTest {
 
 		List<TotalizerResponse> result = totalizerService.getTotalizers(filter);
 
-		TotalizerResponse primary = result.stream()
-				.filter(item -> TotalizerService.CODE_AREA_OF_INTEREST.equals(item.code()))
-				.findFirst()
-				.orElseThrow();
+		TotalizerResponse primary = result.getFirst();
 		assertEquals(3.0, primary.value());
 		assertEquals(45L, primary.subItemValue());
 		verify(areaOfInterestRepository).aggregateByLevel3Ids(eq(List.of("3200607")));
+		verify(areaOfInterestRepository).sumThemesByLevel3Ids(eq(List.of("3200607")));
 	}
 
 	@Test
 	void getTotalizers_WhenConfigLabelChanges_ShouldUseLabelFromConfig() {
 		when(installationConfigService.getInstallationConfig())
-				.thenReturn(installationConfig(
+				.thenReturn(installationConfigWithThemes(
 						"Imóveis cadastrados",
 						"un.",
 						"ha"
@@ -131,10 +147,7 @@ class TotalizerServiceTest {
 
 		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
 
-		TotalizerResponse primary = result.stream()
-				.filter(item -> TotalizerService.CODE_AREA_OF_INTEREST.equals(item.code()))
-				.findFirst()
-				.orElseThrow();
+		TotalizerResponse primary = result.getFirst();
 		assertEquals("Imóveis cadastrados", primary.name());
 		assertEquals("un.", primary.unitOfMeasurement());
 		assertEquals("ha", primary.subItemName());
@@ -171,24 +184,30 @@ class TotalizerServiceTest {
 		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
 	}
 
-	private static InstallationConfigResponse installationConfig(
+	private static InstallationConfigResponse installationConfigWithThemes(
 			String label,
 			String unitOfMeasurement,
 			String optionalLabel
 	) {
-		KpiCardConfigResponse card = new KpiCardConfigResponse(
-				TotalizerService.CODE_AREA_OF_INTEREST,
-				label,
-				unitOfMeasurement,
-				optionalLabel,
-				"#CED6E5",
-				1,
-				true
+		List<KpiCardConfigResponse> cards = List.of(
+				new KpiCardConfigResponse(
+						TotalizerService.CODE_AREA_OF_INTEREST,
+						label,
+						unitOfMeasurement,
+						optionalLabel,
+						"#CED6E5",
+						1,
+						true
+				),
+				new KpiCardConfigResponse(TotalizerService.CODE_THEME_1, "Theme 1", "ha", null, "#C1D2F2", 2, false),
+				new KpiCardConfigResponse(TotalizerService.CODE_THEME_2, "Theme 2", "ha", null, "#98B7EC", 3, false),
+				new KpiCardConfigResponse(TotalizerService.CODE_THEME_3, "Theme 3", "ha", null, "#97CCE3", 4, false),
+				new KpiCardConfigResponse(TotalizerService.CODE_THEME_4, "Theme 4", "ha", null, "#B6C3D9", 5, false)
 		);
 		return new InstallationConfigResponse(
 				List.of(),
 				null,
-				new HomeKpisConfigResponse(5, TotalizerService.CODE_AREA_OF_INTEREST, List.of(card)),
+				new HomeKpisConfigResponse(5, TotalizerService.CODE_AREA_OF_INTEREST, cards),
 				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
 				null
 		);
@@ -204,6 +223,35 @@ class TotalizerServiceTest {
 			@Override
 			public BigDecimal getTotalArea() {
 				return totalArea;
+			}
+		};
+	}
+
+	private static ThemeTotalsAggregate themes(
+			BigDecimal t1,
+			BigDecimal t2,
+			BigDecimal t3,
+			BigDecimal t4
+	) {
+		return new ThemeTotalsAggregate() {
+			@Override
+			public BigDecimal getTheme1() {
+				return t1;
+			}
+
+			@Override
+			public BigDecimal getTheme2() {
+				return t2;
+			}
+
+			@Override
+			public BigDecimal getTheme3() {
+				return t3;
+			}
+
+			@Override
+			public BigDecimal getTheme4() {
+				return t4;
 			}
 		};
 	}
