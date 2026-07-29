@@ -35,7 +35,7 @@ class TotalizerControllerTest {
 	@BeforeEach
 	void setUp() {
 		filter = new TotalizerFilterRequest();
-		filter.setLevel2Id("DF");
+		filter.setLevel2Ids(List.of("DF"));
 
 		totalizers = List.of(
 				new TotalizerResponse("Imóveis cadastrados", "AREA_OF_INTEREST", 10.0, "ha", 20L, "un.")
@@ -51,7 +51,8 @@ class TotalizerControllerTest {
 				),
 				"2020-01-10",
 				"2024-06-15",
-				new BigDecimal("120.50")
+				new BigDecimal("120.50"),
+				List.of()
 		);
 	}
 
@@ -74,5 +75,16 @@ class TotalizerControllerTest {
 
 		assertEquals(detail, result);
 		verify(totalizerService).getDetailByIdentifier("DF123456789012");
+	}
+
+	@Test
+	void getDetailsByCoordinates_ShouldDelegateToService() {
+		when(totalizerService.getDetailsByCoordinates(-15.79, -47.88)).thenReturn(detail);
+
+		DetailByIdentifierResponse result =
+				totalizerController.getDetailsByCoordinates(-15.79, -47.88);
+
+		assertEquals(detail, result);
+		verify(totalizerService).getDetailsByCoordinates(-15.79, -47.88);
 	}
 }

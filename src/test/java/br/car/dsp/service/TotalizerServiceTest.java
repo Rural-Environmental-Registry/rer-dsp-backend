@@ -15,8 +15,10 @@ import br.car.dsp.model.TerritoryLevel3;
 import br.car.dsp.repository.AreaOfInterestRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,8 +32,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -60,7 +64,7 @@ class TotalizerServiceTest {
 				));
 		lenient().when(areaOfInterestRepository.sumThemesAll())
 				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
-		lenient().when(areaOfInterestRepository.sumThemesByLevel2Id(org.mockito.ArgumentMatchers.anyString()))
+		lenient().when(areaOfInterestRepository.sumThemesByLevel2Ids(anyCollection()))
 				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
 		lenient().when(areaOfInterestRepository.sumThemesByLevel3Ids(anyCollection()))
 				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
@@ -101,19 +105,19 @@ class TotalizerServiceTest {
 
 	@Test
 	void getTotalizers_WhenStateProvided_ShouldAggregateByLevel2() {
-		when(areaOfInterestRepository.aggregateByLevel2Id("DF"))
+		when(areaOfInterestRepository.aggregateByLevel2Ids(List.of("DF")))
 				.thenReturn(aggregate(12L, new BigDecimal("100.6")));
 
 		TotalizerFilterRequest filter = new TotalizerFilterRequest();
-		filter.setLevel2Id("DF");
+		filter.setLevel2Ids(List.of("DF"));
 
 		List<TotalizerResponse> result = totalizerService.getTotalizers(filter);
 
 		TotalizerResponse primary = result.getFirst();
 		assertEquals(12.0, primary.value());
 		assertEquals(101L, primary.subItemValue());
-		verify(areaOfInterestRepository).aggregateByLevel2Id("DF");
-		verify(areaOfInterestRepository).sumThemesByLevel2Id("DF");
+		verify(areaOfInterestRepository).aggregateByLevel2Ids(List.of("DF"));
+		verify(areaOfInterestRepository).sumThemesByLevel2Ids(List.of("DF"));
 	}
 
 	@Test
@@ -122,7 +126,7 @@ class TotalizerServiceTest {
 				.thenReturn(aggregate(3L, new BigDecimal("45")));
 
 		TotalizerFilterRequest filter = new TotalizerFilterRequest();
-		filter.setLevel2Id("ES");
+		filter.setLevel2Ids(List.of("ES"));
 		filter.setLevel3Ids(List.of("3200607"));
 
 		List<TotalizerResponse> result = totalizerService.getTotalizers(filter);
@@ -170,6 +174,7 @@ class TotalizerServiceTest {
 		assertEquals(0, new BigDecimal("120.50").compareTo(result.area()));
 		assertNotNull(result.latitude());
 		assertNotNull(result.longitude());
+		assertEquals(List.of(), result.otherIds());
 	}
 
 	@Test
@@ -179,6 +184,67 @@ class TotalizerServiceTest {
 		ResponseStatusException exception = assertThrows(
 				ResponseStatusException.class,
 				() -> totalizerService.getDetailByIdentifier("UNKNOWN")
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getDetailsByCoordinates_WhenNone_ShouldThrowNotFound() {
+		when(areaOfInterestRepository.findIdsContainingPoint(-15.75, -47.85))
+				.thenReturn(List.of());
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> totalizerService.getDetailsByCoordinates(-15.75, -47.85)
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getDetailsByCoordinates_WhenSingle_ShouldReturnEmptyOtherIds() {
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		when(areaOfInterestRepository.findIdsContainingPoint(-15.75, -47.85))
+				.thenReturn(List.of("DF-123"));
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+
+		DetailByIdentifierResponse result =
+				totalizerService.getDetailsByCoordinates(-15.75, -47.85);
+
+		assertEquals("DF-123", result.id());
+		assertEquals(List.of(), result.otherIds());
+	}
+
+	@Test
+	void getDetailsByCoordinates_WhenMultiple_ShouldReturnOtherIds() {
+		when(areaOfInterestRepository.findIdsContainingPoint(-15.75, -47.85))
+				.thenReturn(List.of("DF-123", "DF-456", "DF-789"));
+		when(areaOfInterestRepository.findById(org.mockito.ArgumentMatchers.anyString()))
+				.thenAnswer(invocation -> {
+					String id = invocation.getArgument(0);
+					AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+					areaOfInterest.setId(id);
+					return Optional.of(areaOfInterest);
+				});
+
+		DetailByIdentifierResponse result =
+				totalizerService.getDetailsByCoordinates(-15.75, -47.85);
+
+		assertTrue(Set.of("DF-123", "DF-456", "DF-789").contains(result.id()));
+		assertEquals(2, result.otherIds().size());
+		assertFalse(result.otherIds().contains(result.id()));
+		Set<String> allIds = new HashSet<>();
+		allIds.add(result.id());
+		allIds.addAll(result.otherIds());
+		assertEquals(Set.of("DF-123", "DF-456", "DF-789"), allIds);
+	}
+
+	@Test
+	void getDetailsByCoordinates_WhenNullParams_ShouldThrowNotFound() {
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> totalizerService.getDetailsByCoordinates(null, -47.85)
 		);
 
 		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());

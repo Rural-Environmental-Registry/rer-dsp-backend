@@ -1,6 +1,7 @@
 package br.car.dsp.controller;
 
 import br.car.dsp.api.TerritoryApi;
+import br.car.dsp.dto.TerritoryBoundaryBoxResponse;
 import br.car.dsp.dto.TerritoryOptionResponse;
 import br.car.dsp.service.TerritoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,5 +24,11 @@ public class TerritoryController implements TerritoryApi {
 	@Operation(summary = "Lists options for a level (level1/level2/level3)")
 	public List<TerritoryOptionResponse> getOptions(String level, String parentId) {
 		return territoryService.getOptions(level, parentId);
+	}
+
+	@Override
+	@Operation(summary = "Returns boundary_box envelope for level3 list (preferred) or level2 list")
+	public TerritoryBoundaryBoxResponse getBoundaryBox(List<String> level2Ids, List<String> level3Ids) {
+		return territoryService.getBoundaryBox(level2Ids, level3Ids);
 	}
 }

@@ -4,6 +4,7 @@ import br.car.dsp.dto.AreaOfInterestAggregate;
 import br.car.dsp.dto.ThemeTotalsAggregate;
 import br.car.dsp.model.AreaOfInterest;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,24 @@ public interface AreaOfInterestRepository extends JpaRepository<AreaOfInterest, 
 	@EntityGraph(attributePaths = {"territoryLevel3", "territoryLevel3.parent"})
 	@Override
 	Optional<AreaOfInterest> findById(String id);
+
+	@Query(value = """
+			SELECT a.id
+			FROM dsp.area_of_interest a
+			WHERE a.boundary_box IS NOT NULL
+			  AND public.ST_Contains(
+			        a.boundary_box,
+			        public.ST_SetSRID(
+			          public.ST_MakePoint(:longitude, :latitude),
+			          public.ST_SRID(a.boundary_box)
+			        )
+			      )
+			ORDER BY a.area ASC NULLS LAST, a.id ASC
+			""", nativeQuery = true)
+	List<String> findIdsContainingPoint(
+			@Param("latitude") Double latitude,
+			@Param("longitude") Double longitude
+	);
 
 	@Query(value = """
 			SELECT
@@ -30,9 +49,9 @@ public interface AreaOfInterestRepository extends JpaRepository<AreaOfInterest, 
 				COALESCE(SUM(a.area), 0) AS totalArea
 			FROM dsp.area_of_interest a
 			JOIN dsp.territory_level_3 l3 ON l3.id = a.territory_level_3_id
-			WHERE l3.parent_id = :level2Id
+			WHERE l3.parent_id IN (:level2Ids)
 			""", nativeQuery = true)
-	AreaOfInterestAggregate aggregateByLevel2Id(@Param("level2Id") String level2Id);
+	AreaOfInterestAggregate aggregateByLevel2Ids(@Param("level2Ids") Collection<String> level2Ids);
 
 	@Query(value = """
 			SELECT
@@ -61,9 +80,9 @@ public interface AreaOfInterestRepository extends JpaRepository<AreaOfInterest, 
 				COALESCE(SUM(a.theme_4), 0) AS theme4
 			FROM dsp.area_of_interest a
 			JOIN dsp.territory_level_3 l3 ON l3.id = a.territory_level_3_id
-			WHERE l3.parent_id = :level2Id
+			WHERE l3.parent_id IN (:level2Ids)
 			""", nativeQuery = true)
-	ThemeTotalsAggregate sumThemesByLevel2Id(@Param("level2Id") String level2Id);
+	ThemeTotalsAggregate sumThemesByLevel2Ids(@Param("level2Ids") Collection<String> level2Ids);
 
 	@Query(value = """
 			SELECT

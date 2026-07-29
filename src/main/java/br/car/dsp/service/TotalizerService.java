@@ -20,6 +20,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -48,13 +49,13 @@ public class TotalizerService {
 
 	@Transactional(readOnly = true)
 	public List<TotalizerResponse> getTotalizers(TotalizerFilterRequest filter) {
-		String level2Id = filter != null ? filter.getLevel2Id() : null;
+		List<String> level2Ids = filter != null ? filter.getLevel2Ids() : List.of();
 		List<String> level3Ids = filter != null ? filter.getLevel3Ids() : List.of();
 
 		InstallationConfigResponse config = installationConfigService.getInstallationConfig();
 		List<KpiCardConfigResponse> cards = resolveCards(config);
-		AreaOfInterestAggregate aggregate = resolveAggregate(level2Id, level3Ids);
-		ThemeTotalsAggregate themes = resolveThemeTotals(level2Id, level3Ids);
+		AreaOfInterestAggregate aggregate = resolveAggregate(level2Ids, level3Ids);
+		ThemeTotalsAggregate themes = resolveThemeTotals(level2Ids, level3Ids);
 
 		List<TotalizerResponse> totalizers = new ArrayList<>(cards.size());
 		for (KpiCardConfigResponse card : cards) {
@@ -78,9 +79,41 @@ public class TotalizerService {
 						"Identifier not found"
 				));
 
+		return toDetailResponse(areaOfInterest, List.of());
+	}
+
+	@Transactional(readOnly = true)
+	public DetailByIdentifierResponse getDetailsByCoordinates(Double latitude, Double longitude) {
+		if (latitude == null || longitude == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Identifier not found");
+		}
+
+		List<String> matchingIds = areaOfInterestRepository.findIdsContainingPoint(latitude, longitude);
+		if (matchingIds == null || matchingIds.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Identifier not found");
+		}
+
+		List<String> shuffledIds = new ArrayList<>(matchingIds);
+		Collections.shuffle(shuffledIds);
+
+		String selectedId = shuffledIds.getFirst();
+		List<String> otherIds = shuffledIds.stream().skip(1).toList();
+
+		AreaOfInterest areaOfInterest = areaOfInterestRepository.findById(selectedId)
+				.orElseThrow(() -> new ResponseStatusException(
+						HttpStatus.NOT_FOUND,
+						"Identifier not found"
+				));
+
+		return toDetailResponse(areaOfInterest, otherIds);
+	}
+
+	private static DetailByIdentifierResponse toDetailResponse(
+			AreaOfInterest areaOfInterest,
+			List<String> otherIds
+	) {
 		TerritoryLevel3 level3 = areaOfInterest.getTerritoryLevel3();
 		TerritoryLevel2 level2 = level3 != null ? level3.getParent() : null;
-
 		Centroid centroid = resolveCentroid(areaOfInterest.getCentroidCoordinates());
 
 		return new DetailByIdentifierResponse(
@@ -95,7 +128,8 @@ public class TotalizerService {
 				),
 				formatDate(areaOfInterest.getRegistrationDate()),
 				formatDate(areaOfInterest.getAlterationDate()),
-				areaOfInterest.getArea()
+				areaOfInterest.getArea(),
+				otherIds != null ? otherIds : List.of()
 		);
 	}
 
@@ -187,33 +221,35 @@ public class TotalizerService {
 		return value != null ? value : BigDecimal.ZERO;
 	}
 
-	private AreaOfInterestAggregate resolveAggregate(String level2Id, List<String> level3Ids) {
-		List<String> ids = normalizeLevel3Ids(level3Ids);
-		if (!ids.isEmpty()) {
-			return areaOfInterestRepository.aggregateByLevel3Ids(ids);
+	private AreaOfInterestAggregate resolveAggregate(List<String> level2Ids, List<String> level3Ids) {
+		List<String> normalizedLevel3Ids = normalizeIds(level3Ids);
+		if (!normalizedLevel3Ids.isEmpty()) {
+			return areaOfInterestRepository.aggregateByLevel3Ids(normalizedLevel3Ids);
 		}
-		if (level2Id != null && !level2Id.isBlank()) {
-			return areaOfInterestRepository.aggregateByLevel2Id(level2Id.trim());
+		List<String> normalizedLevel2Ids = normalizeIds(level2Ids);
+		if (!normalizedLevel2Ids.isEmpty()) {
+			return areaOfInterestRepository.aggregateByLevel2Ids(normalizedLevel2Ids);
 		}
 		return areaOfInterestRepository.aggregateAll();
 	}
 
-	private ThemeTotalsAggregate resolveThemeTotals(String level2Id, List<String> level3Ids) {
-		List<String> ids = normalizeLevel3Ids(level3Ids);
-		if (!ids.isEmpty()) {
-			return areaOfInterestRepository.sumThemesByLevel3Ids(ids);
+	private ThemeTotalsAggregate resolveThemeTotals(List<String> level2Ids, List<String> level3Ids) {
+		List<String> normalizedLevel3Ids = normalizeIds(level3Ids);
+		if (!normalizedLevel3Ids.isEmpty()) {
+			return areaOfInterestRepository.sumThemesByLevel3Ids(normalizedLevel3Ids);
 		}
-		if (level2Id != null && !level2Id.isBlank()) {
-			return areaOfInterestRepository.sumThemesByLevel2Id(level2Id.trim());
+		List<String> normalizedLevel2Ids = normalizeIds(level2Ids);
+		if (!normalizedLevel2Ids.isEmpty()) {
+			return areaOfInterestRepository.sumThemesByLevel2Ids(normalizedLevel2Ids);
 		}
 		return areaOfInterestRepository.sumThemesAll();
 	}
 
-	private static List<String> normalizeLevel3Ids(List<String> level3Ids) {
-		if (level3Ids == null || level3Ids.isEmpty()) {
+	private static List<String> normalizeIds(List<String> ids) {
+		if (ids == null || ids.isEmpty()) {
 			return List.of();
 		}
-		return level3Ids.stream()
+		return ids.stream()
 				.filter(id -> id != null && !id.isBlank())
 				.map(String::trim)
 				.toList();

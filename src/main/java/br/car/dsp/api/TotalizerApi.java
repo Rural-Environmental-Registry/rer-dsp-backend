@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -28,4 +29,10 @@ public interface TotalizerApi {
 
 	@GetMapping(value = "/getDeatilsByIdentifier/{identifier}", produces = MediaType.APPLICATION_JSON_VALUE)
 	DetailByIdentifierResponse getDetailsByIdentifier(@PathVariable("identifier") String identifier);
+
+	@GetMapping(value = "/getDetailsByCoordinates", produces = MediaType.APPLICATION_JSON_VALUE)
+	DetailByIdentifierResponse getDetailsByCoordinates(
+			@RequestParam("lat") Double lat,
+			@RequestParam("lng") Double lng
+	);
 }

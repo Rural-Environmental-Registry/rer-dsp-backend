@@ -1,6 +1,7 @@
 package br.car.dsp.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record DetailByIdentifierResponse(
 		String id,
@@ -9,6 +10,7 @@ public record DetailByIdentifierResponse(
 		TerritoryLevelsResponse territory,
 		String registrationDate,
 		String alterationDate,
-		BigDecimal area
+		BigDecimal area,
+		List<String> otherIds
 ) {
 }

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "Totalizer", description = "KPIs and detail by identifier (mock — Consulta Pública contract)")
+@Tag(name = "Totalizer", description = "KPIs and AOI detail by identifier or map coordinates")
 public class TotalizerController implements TotalizerApi {
 
 	private final TotalizerService totalizerService;
@@ -31,5 +31,11 @@ public class TotalizerController implements TotalizerApi {
 	@Operation(summary = "Detail by identifier")
 	public DetailByIdentifierResponse getDetailsByIdentifier(String identifier) {
 		return totalizerService.getDetailByIdentifier(identifier);
+	}
+
+	@Override
+	@Operation(summary = "Detail by map click coordinates (boundary_box)")
+	public DetailByIdentifierResponse getDetailsByCoordinates(Double lat, Double lng) {
+		return totalizerService.getDetailsByCoordinates(lat, lng);
 	}
 }
