@@ -118,6 +118,7 @@ class TerritoryServiceTest {
 		when(level3Repository.findAllById(List.of("5300108"))).thenReturn(List.of(city));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(
+				null,
 				List.of("DF"),
 				List.of("5300108")
 		);
@@ -141,6 +142,7 @@ class TerritoryServiceTest {
 		when(level3Repository.findAllById(List.of("5300108", "5300109"))).thenReturn(List.of(a, b));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(
+				null,
 				List.of("DF"),
 				List.of("5300108", "5300109")
 		);
@@ -159,7 +161,7 @@ class TerritoryServiceTest {
 		df.setBoundaryBox(rectangle(-48.3, -16.1, -47.2, -15.4));
 		when(level2Repository.findAllById(List.of("DF"))).thenReturn(List.of(df));
 
-		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(List.of("DF"), null);
+		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, List.of("DF"), null);
 
 		assertEquals(-48.3, bbox.minX(), 1e-9);
 		assertEquals(-16.1, bbox.minY(), 1e-9);
@@ -179,7 +181,7 @@ class TerritoryServiceTest {
 		go.setBoundaryBox(rectangle(-50.0, -19.0, -46.0, -13.0));
 		when(level2Repository.findAllById(List.of("DF", "GO"))).thenReturn(List.of(df, go));
 
-		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(List.of("DF", "GO"), List.of());
+		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, List.of("DF", "GO"), List.of());
 
 		assertEquals(-50.0, bbox.minX(), 1e-9);
 		assertEquals(-19.0, bbox.minY(), 1e-9);
@@ -188,18 +190,88 @@ class TerritoryServiceTest {
 	}
 
 	@Test
-	void getBoundaryBox_MissingIds_ShouldFail() {
-		assertThrows(ResponseStatusException.class, () -> territoryService.getBoundaryBox(null, List.of(" ")));
+	void getBoundaryBox_NoParams_ShouldReturnAllLevel1Envelope() {
+		TerritoryLevel1 a = new TerritoryLevel1();
+		a.setId("1");
+		a.setName("Norte");
+		a.setBoundaryBox(rectangle(-70.0, -5.0, -50.0, 5.0));
+		TerritoryLevel1 b = new TerritoryLevel1();
+		b.setId("2");
+		b.setName("Sul");
+		b.setBoundaryBox(rectangle(-55.0, -34.0, -48.0, -22.0));
+		when(level1Repository.findAll()).thenReturn(List.of(a, b));
+
+		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, null, null);
+
+		assertEquals(-70.0, bbox.minX(), 1e-9);
+		assertEquals(-34.0, bbox.minY(), 1e-9);
+		assertEquals(-48.0, bbox.maxX(), 1e-9);
+		assertEquals(5.0, bbox.maxY(), 1e-9);
 	}
 
 	@Test
-	void getBoundaryBox_NullGeometry_ShouldFail() {
+	void getBoundaryBox_Level1Ids_ShouldReturnEnvelope() {
+		TerritoryLevel1 a = new TerritoryLevel1();
+		a.setId("1");
+		a.setName("Norte");
+		a.setBoundaryBox(rectangle(-70.0, -5.0, -50.0, 5.0));
+		when(level1Repository.findAllById(List.of("1"))).thenReturn(List.of(a));
+
+		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(List.of("1"), null, null);
+
+		assertEquals(-70.0, bbox.minX(), 1e-9);
+		assertEquals(-5.0, bbox.minY(), 1e-9);
+		assertEquals(-50.0, bbox.maxX(), 1e-9);
+		assertEquals(5.0, bbox.maxY(), 1e-9);
+	}
+
+	@Test
+	void getBoundaryBox_Level1WithoutGeometry_ShouldFallbackToLevel2() {
+		TerritoryLevel1 a = new TerritoryLevel1();
+		a.setId("1");
+		a.setName("Norte");
+		when(level1Repository.findAll()).thenReturn(List.of(a));
+
 		TerritoryLevel2 df = new TerritoryLevel2();
 		df.setId("DF");
 		df.setName("Distrito Federal");
-		when(level2Repository.findAllById(List.of("DF"))).thenReturn(List.of(df));
+		df.setBoundaryBox(rectangle(-48.3, -16.1, -47.2, -15.4));
+		when(level2Repository.findAll()).thenReturn(List.of(df));
 
-		assertThrows(ResponseStatusException.class, () -> territoryService.getBoundaryBox(List.of("DF"), null));
+		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, null, null);
+
+		assertEquals(-48.3, bbox.minX(), 1e-9);
+		assertEquals(-16.1, bbox.minY(), 1e-9);
+		assertEquals(-47.2, bbox.maxX(), 1e-9);
+		assertEquals(-15.4, bbox.maxY(), 1e-9);
+	}
+
+	@Test
+	void getBoundaryBox_Level1AndLevel2WithoutGeometry_ShouldFallbackToLevel3() {
+		when(level1Repository.findAll()).thenReturn(List.of());
+		when(level2Repository.findAll()).thenReturn(List.of());
+
+		TerritoryLevel3 city = new TerritoryLevel3();
+		city.setId("5300108");
+		city.setName("Brasília");
+		city.setBoundaryBox(rectangle(-48.2, -16.0, -47.3, -15.5));
+		when(level3Repository.findAll()).thenReturn(List.of(city));
+
+		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, null, null);
+
+		assertEquals(-48.2, bbox.minX(), 1e-9);
+		assertEquals(-16.0, bbox.minY(), 1e-9);
+		assertEquals(-47.3, bbox.maxX(), 1e-9);
+		assertEquals(-15.5, bbox.maxY(), 1e-9);
+	}
+
+	@Test
+	void getBoundaryBox_NoGeometryAnywhere_ShouldFail() {
+		when(level1Repository.findAll()).thenReturn(List.of());
+		when(level2Repository.findAll()).thenReturn(List.of());
+		when(level3Repository.findAll()).thenReturn(List.of());
+
+		assertThrows(ResponseStatusException.class, () -> territoryService.getBoundaryBox(null, null, null));
 	}
 
 	@Test
@@ -208,7 +280,7 @@ class TerritoryServiceTest {
 
 		assertThrows(
 				ResponseStatusException.class,
-				() -> territoryService.getBoundaryBox(List.of("DF"), List.of("999"))
+				() -> territoryService.getBoundaryBox(null, null, List.of("999"))
 		);
 	}
 

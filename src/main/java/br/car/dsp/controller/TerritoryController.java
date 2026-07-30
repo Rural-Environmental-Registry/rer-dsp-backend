@@ -27,8 +27,12 @@ public class TerritoryController implements TerritoryApi {
 	}
 
 	@Override
-	@Operation(summary = "Returns boundary_box envelope for level3 list (preferred) or level2 list")
-	public TerritoryBoundaryBoxResponse getBoundaryBox(List<String> level2Ids, List<String> level3Ids) {
-		return territoryService.getBoundaryBox(level2Ids, level3Ids);
+	@Operation(summary = "Returns boundary_box envelope (level3 > level2 > level1; empty = all L1 with fallback)")
+	public TerritoryBoundaryBoxResponse getBoundaryBox(
+			List<String> level1Ids,
+			List<String> level2Ids,
+			List<String> level3Ids
+	) {
+		return territoryService.getBoundaryBox(level1Ids, level2Ids, level3Ids);
 	}
 }

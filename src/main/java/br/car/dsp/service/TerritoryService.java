@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Exposes territorial options by generic level (level1/2/3) from the database.
@@ -64,59 +65,97 @@ public class TerritoryService {
 		}
 	}
 
-	public TerritoryBoundaryBoxResponse getBoundaryBox(List<String> level2Ids, List<String> level3Ids) {
+	public TerritoryBoundaryBoxResponse getBoundaryBox(
+			List<String> level1Ids,
+			List<String> level2Ids,
+			List<String> level3Ids
+	) {
 		List<String> normalizedLevel3Ids = normalizeIds(level3Ids);
 		if (!normalizedLevel3Ids.isEmpty()) {
-			return getLevel3BoundaryBox(normalizedLevel3Ids);
+			Envelope envelope = unionLevel3(normalizedLevel3Ids, true);
+			if (envelope != null) {
+				return toResponse(envelope);
+			}
+			return fallbackFromLevel2();
 		}
 
 		List<String> normalizedLevel2Ids = normalizeIds(level2Ids);
-		if (normalizedLevel2Ids.isEmpty()) {
-			throw new ResponseStatusException(
-					HttpStatus.BAD_REQUEST,
-					"level2Ids or level3Ids is required"
-			);
+		if (!normalizedLevel2Ids.isEmpty()) {
+			Envelope envelope = unionLevel2(normalizedLevel2Ids, true);
+			if (envelope != null) {
+				return toResponse(envelope);
+			}
+			return fallbackFromLevel2();
 		}
 
-		return getLevel2BoundaryBox(normalizedLevel2Ids);
+		List<String> normalizedLevel1Ids = normalizeIds(level1Ids);
+		if (!normalizedLevel1Ids.isEmpty()) {
+			Envelope envelope = unionLevel1(normalizedLevel1Ids, true);
+			if (envelope != null) {
+				return toResponse(envelope);
+			}
+			return fallbackFromLevel2();
+		}
+
+		// Sem params: todos os L1, com fallback L2 → L3.
+		Envelope envelope = unionLevel1(List.of(), false);
+		if (envelope != null) {
+			return toResponse(envelope);
+		}
+		return fallbackFromLevel2();
 	}
 
-	private TerritoryBoundaryBoxResponse getLevel2BoundaryBox(List<String> level2Ids) {
-		List<TerritoryLevel2> units = level2Repository.findAllById(level2Ids);
-		ensureAllFound(level2Ids, units.stream().map(TerritoryLevel2::getId).toList(), "level2");
-
-		Envelope union = null;
-		for (TerritoryLevel2 unit : units) {
-			union = expandUnion(union, unit.getBoundaryBox());
+	private TerritoryBoundaryBoxResponse fallbackFromLevel2() {
+		Envelope level2 = unionLevel2(List.of(), false);
+		if (level2 != null) {
+			return toResponse(level2);
 		}
-
-		if (union == null) {
-			throw new ResponseStatusException(
-					HttpStatus.NOT_FOUND,
-					"Territory boundary_box not found for level2: " + String.join(",", level2Ids)
-			);
+		Envelope level3 = unionLevel3(List.of(), false);
+		if (level3 != null) {
+			return toResponse(level3);
 		}
-
-		return toResponse(union);
+		throw new ResponseStatusException(
+				HttpStatus.NOT_FOUND,
+				"Territory boundary_box not found for level1/level2/level3"
+		);
 	}
 
-	private TerritoryBoundaryBoxResponse getLevel3BoundaryBox(List<String> level3Ids) {
-		List<TerritoryLevel3> units = level3Repository.findAllById(level3Ids);
-		ensureAllFound(level3Ids, units.stream().map(TerritoryLevel3::getId).toList(), "level3");
+	private Envelope unionLevel1(List<String> ids, boolean requireAllFound) {
+		List<TerritoryLevel1> units = ids.isEmpty()
+				? level1Repository.findAll()
+				: level1Repository.findAllById(ids);
+		if (requireAllFound && !ids.isEmpty()) {
+			ensureAllFound(ids, units.stream().map(TerritoryLevel1::getId).toList(), "level1");
+		}
+		return unionPolygons(units, TerritoryLevel1::getBoundaryBox);
+	}
 
+	private Envelope unionLevel2(List<String> ids, boolean requireAllFound) {
+		List<TerritoryLevel2> units = ids.isEmpty()
+				? level2Repository.findAll()
+				: level2Repository.findAllById(ids);
+		if (requireAllFound && !ids.isEmpty()) {
+			ensureAllFound(ids, units.stream().map(TerritoryLevel2::getId).toList(), "level2");
+		}
+		return unionPolygons(units, TerritoryLevel2::getBoundaryBox);
+	}
+
+	private Envelope unionLevel3(List<String> ids, boolean requireAllFound) {
+		List<TerritoryLevel3> units = ids.isEmpty()
+				? level3Repository.findAll()
+				: level3Repository.findAllById(ids);
+		if (requireAllFound && !ids.isEmpty()) {
+			ensureAllFound(ids, units.stream().map(TerritoryLevel3::getId).toList(), "level3");
+		}
+		return unionPolygons(units, TerritoryLevel3::getBoundaryBox);
+	}
+
+	private static <T> Envelope unionPolygons(List<T> units, Function<T, Polygon> boundaryGetter) {
 		Envelope union = null;
-		for (TerritoryLevel3 unit : units) {
-			union = expandUnion(union, unit.getBoundaryBox());
+		for (T unit : units) {
+			union = expandUnion(union, boundaryGetter.apply(unit));
 		}
-
-		if (union == null) {
-			throw new ResponseStatusException(
-					HttpStatus.NOT_FOUND,
-					"Territory boundary_box not found for level3: " + String.join(",", level3Ids)
-			);
-		}
-
-		return toResponse(union);
+		return union;
 	}
 
 	private static void ensureAllFound(List<String> requestedIds, List<String> foundIds, String level) {

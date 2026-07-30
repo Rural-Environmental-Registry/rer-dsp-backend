@@ -23,6 +23,7 @@ public interface TerritoryApi {
 
 	@GetMapping(value = "/boundary-box", produces = MediaType.APPLICATION_JSON_VALUE)
 	TerritoryBoundaryBoxResponse getBoundaryBox(
+			@RequestParam(value = "level1Ids", required = false) List<String> level1Ids,
 			@RequestParam(value = "level2Ids", required = false) List<String> level2Ids,
 			@RequestParam(value = "level3Ids", required = false) List<String> level3Ids
 	);

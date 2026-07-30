@@ -38,13 +38,14 @@ class TerritoryControllerTest {
 	@Test
 	void getBoundaryBox_ShouldDelegateToService() {
 		TerritoryBoundaryBoxResponse expected = new TerritoryBoundaryBoxResponse(-48.2, -16.0, -47.3, -15.5);
+		List<String> level1Ids = List.of();
 		List<String> level2Ids = List.of("DF");
 		List<String> level3Ids = List.of("5300108", "5300109");
-		when(territoryService.getBoundaryBox(level2Ids, level3Ids)).thenReturn(expected);
+		when(territoryService.getBoundaryBox(level1Ids, level2Ids, level3Ids)).thenReturn(expected);
 
-		TerritoryBoundaryBoxResponse result = territoryController.getBoundaryBox(level2Ids, level3Ids);
+		TerritoryBoundaryBoxResponse result = territoryController.getBoundaryBox(level1Ids, level2Ids, level3Ids);
 
 		assertEquals(expected, result);
-		verify(territoryService).getBoundaryBox(level2Ids, level3Ids);
+		verify(territoryService).getBoundaryBox(level1Ids, level2Ids, level3Ids);
 	}
 }
