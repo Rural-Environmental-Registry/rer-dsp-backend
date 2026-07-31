@@ -1,6 +1,7 @@
 package br.car.dsp.service;
 
 import br.car.dsp.dto.TerritoryBoundaryBoxResponse;
+import br.car.dsp.dto.TerritoryEnvelopeProjection;
 import br.car.dsp.dto.TerritoryOptionResponse;
 import br.car.dsp.model.TerritoryLevel1;
 import br.car.dsp.model.TerritoryLevel2;
@@ -10,9 +11,6 @@ import br.car.dsp.repository.TerritoryLevel2Repository;
 import br.car.dsp.repository.TerritoryLevel3Repository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Polygon;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,6 +21,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,11 +111,9 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_Level3_ShouldReturnEnvelope() {
-		TerritoryLevel3 city = new TerritoryLevel3();
-		city.setId("5300108");
-		city.setName("Brasília");
-		city.setBoundaryBox(rectangle(-48.2, -16.0, -47.3, -15.5));
-		when(level3Repository.findAllById(List.of("5300108"))).thenReturn(List.of(city));
+		lenient().when(level3Repository.findIdsPresent(List.of("5300108"))).thenReturn(List.of("5300108"));
+		when(level3Repository.findEnvelopeByIds(List.of("5300108")))
+				.thenReturn(envelope(-48.2, -16.0, -47.3, -15.5));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(
 				null,
@@ -131,15 +129,10 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_MultipleLevel3_ShouldReturnUnifiedEnvelope() {
-		TerritoryLevel3 a = new TerritoryLevel3();
-		a.setId("5300108");
-		a.setName("Brasília");
-		a.setBoundaryBox(rectangle(-48.2, -16.0, -47.3, -15.5));
-		TerritoryLevel3 b = new TerritoryLevel3();
-		b.setId("5300109");
-		b.setName("Other");
-		b.setBoundaryBox(rectangle(-47.0, -15.8, -46.5, -15.2));
-		when(level3Repository.findAllById(List.of("5300108", "5300109"))).thenReturn(List.of(a, b));
+		lenient().when(level3Repository.findIdsPresent(List.of("5300108", "5300109")))
+				.thenReturn(List.of("5300108", "5300109"));
+		when(level3Repository.findEnvelopeByIds(List.of("5300108", "5300109")))
+				.thenReturn(envelope(-48.2, -16.0, -46.5, -15.2));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(
 				null,
@@ -155,11 +148,9 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_Level2_ShouldReturnEnvelope() {
-		TerritoryLevel2 df = new TerritoryLevel2();
-		df.setId("DF");
-		df.setName("Distrito Federal");
-		df.setBoundaryBox(rectangle(-48.3, -16.1, -47.2, -15.4));
-		when(level2Repository.findAllById(List.of("DF"))).thenReturn(List.of(df));
+		lenient().when(level2Repository.findIdsPresent(List.of("DF"))).thenReturn(List.of("DF"));
+		when(level2Repository.findEnvelopeByIds(List.of("DF")))
+				.thenReturn(envelope(-48.3, -16.1, -47.2, -15.4));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, List.of("DF"), null);
 
@@ -171,15 +162,10 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_MultipleLevel2_ShouldReturnUnifiedEnvelope() {
-		TerritoryLevel2 df = new TerritoryLevel2();
-		df.setId("DF");
-		df.setName("Distrito Federal");
-		df.setBoundaryBox(rectangle(-48.3, -16.1, -47.2, -15.4));
-		TerritoryLevel2 go = new TerritoryLevel2();
-		go.setId("GO");
-		go.setName("Goiás");
-		go.setBoundaryBox(rectangle(-50.0, -19.0, -46.0, -13.0));
-		when(level2Repository.findAllById(List.of("DF", "GO"))).thenReturn(List.of(df, go));
+		lenient().when(level2Repository.findIdsPresent(List.of("DF", "GO")))
+				.thenReturn(List.of("DF", "GO"));
+		when(level2Repository.findEnvelopeByIds(List.of("DF", "GO")))
+				.thenReturn(envelope(-50.0, -19.0, -46.0, -13.0));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, List.of("DF", "GO"), List.of());
 
@@ -191,15 +177,7 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_NoParams_ShouldReturnAllLevel1Envelope() {
-		TerritoryLevel1 a = new TerritoryLevel1();
-		a.setId("1");
-		a.setName("Norte");
-		a.setBoundaryBox(rectangle(-70.0, -5.0, -50.0, 5.0));
-		TerritoryLevel1 b = new TerritoryLevel1();
-		b.setId("2");
-		b.setName("Sul");
-		b.setBoundaryBox(rectangle(-55.0, -34.0, -48.0, -22.0));
-		when(level1Repository.findAll()).thenReturn(List.of(a, b));
+		when(level1Repository.findEnvelopeAll()).thenReturn(envelope(-70.0, -34.0, -48.0, 5.0));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, null, null);
 
@@ -211,11 +189,9 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_Level1Ids_ShouldReturnEnvelope() {
-		TerritoryLevel1 a = new TerritoryLevel1();
-		a.setId("1");
-		a.setName("Norte");
-		a.setBoundaryBox(rectangle(-70.0, -5.0, -50.0, 5.0));
-		when(level1Repository.findAllById(List.of("1"))).thenReturn(List.of(a));
+		lenient().when(level1Repository.findIdsPresent(List.of("1"))).thenReturn(List.of("1"));
+		when(level1Repository.findEnvelopeByIds(List.of("1")))
+				.thenReturn(envelope(-70.0, -5.0, -50.0, 5.0));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(List.of("1"), null, null);
 
@@ -227,16 +203,8 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_Level1WithoutGeometry_ShouldFallbackToLevel2() {
-		TerritoryLevel1 a = new TerritoryLevel1();
-		a.setId("1");
-		a.setName("Norte");
-		when(level1Repository.findAll()).thenReturn(List.of(a));
-
-		TerritoryLevel2 df = new TerritoryLevel2();
-		df.setId("DF");
-		df.setName("Distrito Federal");
-		df.setBoundaryBox(rectangle(-48.3, -16.1, -47.2, -15.4));
-		when(level2Repository.findAll()).thenReturn(List.of(df));
+		when(level1Repository.findEnvelopeAll()).thenReturn(emptyEnvelope());
+		when(level2Repository.findEnvelopeAll()).thenReturn(envelope(-48.3, -16.1, -47.2, -15.4));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, null, null);
 
@@ -248,14 +216,9 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_Level1AndLevel2WithoutGeometry_ShouldFallbackToLevel3() {
-		when(level1Repository.findAll()).thenReturn(List.of());
-		when(level2Repository.findAll()).thenReturn(List.of());
-
-		TerritoryLevel3 city = new TerritoryLevel3();
-		city.setId("5300108");
-		city.setName("Brasília");
-		city.setBoundaryBox(rectangle(-48.2, -16.0, -47.3, -15.5));
-		when(level3Repository.findAll()).thenReturn(List.of(city));
+		when(level1Repository.findEnvelopeAll()).thenReturn(emptyEnvelope());
+		when(level2Repository.findEnvelopeAll()).thenReturn(emptyEnvelope());
+		when(level3Repository.findEnvelopeAll()).thenReturn(envelope(-48.2, -16.0, -47.3, -15.5));
 
 		TerritoryBoundaryBoxResponse bbox = territoryService.getBoundaryBox(null, null, null);
 
@@ -267,16 +230,16 @@ class TerritoryServiceTest {
 
 	@Test
 	void getBoundaryBox_NoGeometryAnywhere_ShouldFail() {
-		when(level1Repository.findAll()).thenReturn(List.of());
-		when(level2Repository.findAll()).thenReturn(List.of());
-		when(level3Repository.findAll()).thenReturn(List.of());
+		when(level1Repository.findEnvelopeAll()).thenReturn(emptyEnvelope());
+		when(level2Repository.findEnvelopeAll()).thenReturn(emptyEnvelope());
+		when(level3Repository.findEnvelopeAll()).thenReturn(emptyEnvelope());
 
 		assertThrows(ResponseStatusException.class, () -> territoryService.getBoundaryBox(null, null, null));
 	}
 
 	@Test
 	void getBoundaryBox_UnknownLevel3_ShouldFail() {
-		when(level3Repository.findAllById(List.of("999"))).thenReturn(List.of());
+		when(level3Repository.findIdsPresent(anyCollection())).thenReturn(List.of());
 
 		assertThrows(
 				ResponseStatusException.class,
@@ -284,14 +247,51 @@ class TerritoryServiceTest {
 		);
 	}
 
-	private static Polygon rectangle(double minX, double minY, double maxX, double maxY) {
-		GeometryFactory factory = new GeometryFactory();
-		return factory.createPolygon(new Coordinate[]{
-				new Coordinate(minX, minY),
-				new Coordinate(maxX, minY),
-				new Coordinate(maxX, maxY),
-				new Coordinate(minX, maxY),
-				new Coordinate(minX, minY)
-		});
+	private static TerritoryEnvelopeProjection envelope(double minX, double minY, double maxX, double maxY) {
+		return new TerritoryEnvelopeProjection() {
+			@Override
+			public Double getMinX() {
+				return minX;
+			}
+
+			@Override
+			public Double getMinY() {
+				return minY;
+			}
+
+			@Override
+			public Double getMaxX() {
+				return maxX;
+			}
+
+			@Override
+			public Double getMaxY() {
+				return maxY;
+			}
+		};
+	}
+
+	private static TerritoryEnvelopeProjection emptyEnvelope() {
+		return new TerritoryEnvelopeProjection() {
+			@Override
+			public Double getMinX() {
+				return null;
+			}
+
+			@Override
+			public Double getMinY() {
+				return null;
+			}
+
+			@Override
+			public Double getMaxX() {
+				return null;
+			}
+
+			@Override
+			public Double getMaxY() {
+				return null;
+			}
+		};
 	}
 }

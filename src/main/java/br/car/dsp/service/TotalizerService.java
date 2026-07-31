@@ -2,6 +2,7 @@ package br.car.dsp.service;
 
 import br.car.dsp.dto.AreaOfInterestAggregate;
 import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
+import br.car.dsp.dto.CentroidWgs84Projection;
 import br.car.dsp.dto.DetailByIdentifierResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
@@ -23,8 +24,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.locationtech.jts.geom.Point;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,7 +80,8 @@ public class TotalizerService {
 						"Identifier not found"
 				));
 
-		return toDetailResponse(areaOfInterest, List.of());
+		Centroid centroid = resolveCentroid(areaOfInterestRepository.findCentroidWgs84(areaOfInterest.getId()));
+		return toDetailResponse(areaOfInterest, centroid, List.of());
 	}
 
 	@Transactional(readOnly = true)
@@ -105,16 +107,17 @@ public class TotalizerService {
 						"Identifier not found"
 				));
 
-		return toDetailResponse(areaOfInterest, otherIds);
+		Centroid centroid = resolveCentroid(areaOfInterestRepository.findCentroidWgs84(areaOfInterest.getId()));
+		return toDetailResponse(areaOfInterest, centroid, otherIds);
 	}
 
 	private static DetailByIdentifierResponse toDetailResponse(
 			AreaOfInterest areaOfInterest,
+			Centroid centroid,
 			List<String> otherIds
 	) {
 		TerritoryLevel3 level3 = areaOfInterest.getTerritoryLevel3();
 		TerritoryLevel2 level2 = level3 != null ? level3.getParent() : null;
-		Centroid centroid = resolveCentroid(areaOfInterest.getCentroidCoordinates());
 
 		return new DetailByIdentifierResponse(
 				areaOfInterest.getId(),
@@ -269,13 +272,17 @@ public class TotalizerService {
 		return value.toLocalDate().format(ISO_DATE);
 	}
 
-	private static Centroid resolveCentroid(Point centroidCoordinates) {
-		if (centroidCoordinates == null || centroidCoordinates.isEmpty()) {
+	private static Centroid resolveCentroid(Optional<CentroidWgs84Projection> projection) {
+		if (projection.isEmpty()) {
+			return Centroid.empty();
+		}
+		CentroidWgs84Projection centroid = projection.get();
+		if (centroid.getLatitude() == null || centroid.getLongitude() == null) {
 			return Centroid.empty();
 		}
 		return new Centroid(
-				formatCoordinate(centroidCoordinates.getY()),
-				formatCoordinate(centroidCoordinates.getX())
+				formatCoordinate(centroid.getLatitude()),
+				formatCoordinate(centroid.getLongitude())
 		);
 	}
 

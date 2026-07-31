@@ -1,6 +1,7 @@
 package br.car.dsp.repository;
 
 import br.car.dsp.dto.AreaOfInterestAggregate;
+import br.car.dsp.dto.CentroidWgs84Projection;
 import br.car.dsp.dto.ThemeTotalsAggregate;
 import br.car.dsp.model.AreaOfInterest;
 import java.util.Collection;
@@ -18,13 +19,25 @@ public interface AreaOfInterestRepository extends JpaRepository<AreaOfInterest, 
 	Optional<AreaOfInterest> findById(String id);
 
 	@Query(value = """
+			SELECT
+				public.ST_Y(public.ST_Transform(a.centroid_coordinates, 4326)) AS latitude,
+				public.ST_X(public.ST_Transform(a.centroid_coordinates, 4326)) AS longitude
+			FROM dsp.area_of_interest a
+			WHERE a.id = :id
+			""", nativeQuery = true)
+	Optional<CentroidWgs84Projection> findCentroidWgs84(@Param("id") String id);
+
+	@Query(value = """
 			SELECT a.id
 			FROM dsp.area_of_interest a
 			WHERE a.boundary_box IS NOT NULL
 			  AND public.ST_Contains(
 			        a.boundary_box,
-			        public.ST_SetSRID(
-			          public.ST_MakePoint(:longitude, :latitude),
+			        public.ST_Transform(
+			          public.ST_SetSRID(
+			            public.ST_MakePoint(:longitude, :latitude),
+			            4326
+			          ),
 			          public.ST_SRID(a.boundary_box)
 			        )
 			      )

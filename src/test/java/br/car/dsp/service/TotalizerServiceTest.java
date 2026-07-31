@@ -2,6 +2,7 @@ package br.car.dsp.service;
 
 import br.car.dsp.dto.AreaOfInterestAggregate;
 import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
+import br.car.dsp.dto.CentroidWgs84Projection;
 import br.car.dsp.dto.DetailByIdentifierResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -68,6 +70,8 @@ class TotalizerServiceTest {
 				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
 		lenient().when(areaOfInterestRepository.sumThemesByLevel3Ids(anyCollection()))
 				.thenReturn(themes(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+		lenient().when(areaOfInterestRepository.findCentroidWgs84(anyString()))
+				.thenReturn(Optional.of(centroid(-15.75, -47.85)));
 	}
 
 	@Test
@@ -277,6 +281,20 @@ class TotalizerServiceTest {
 				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
 				null
 		);
+	}
+
+	private static CentroidWgs84Projection centroid(double latitude, double longitude) {
+		return new CentroidWgs84Projection() {
+			@Override
+			public Double getLatitude() {
+				return latitude;
+			}
+
+			@Override
+			public Double getLongitude() {
+				return longitude;
+			}
+		};
 	}
 
 	private static AreaOfInterestAggregate aggregate(Long count, BigDecimal totalArea) {
