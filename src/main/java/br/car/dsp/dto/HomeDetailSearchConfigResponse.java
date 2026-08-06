@@ -2,7 +2,7 @@ package br.car.dsp.dto;
 
 public record HomeDetailSearchConfigResponse(
 		String sectionTitle,
-		String propertySectionTitle,
+		String areaOfInterestSectionTitle,
 		String registrationDateLabel,
 		String alterationDateLabel,
 		String latitudeLabel,

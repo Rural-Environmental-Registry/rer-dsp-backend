@@ -24,6 +24,8 @@ public interface AreaOfInterestRepository extends JpaRepository<AreaOfInterest, 
 				public.ST_X(public.ST_Transform(a.centroid_coordinates, 4326)) AS longitude
 			FROM dsp.area_of_interest a
 			WHERE a.id = :id
+			  AND a.centroid_coordinates IS NOT NULL
+			  AND public.ST_SRID(a.centroid_coordinates) > 0
 			""", nativeQuery = true)
 	Optional<CentroidWgs84Projection> findCentroidWgs84(@Param("id") String id);
 
@@ -31,6 +33,7 @@ public interface AreaOfInterestRepository extends JpaRepository<AreaOfInterest, 
 			SELECT a.id
 			FROM dsp.area_of_interest a
 			WHERE a.boundary_box IS NOT NULL
+			  AND public.ST_SRID(a.boundary_box) > 0
 			  AND public.ST_Contains(
 			        a.boundary_box,
 			        public.ST_Transform(

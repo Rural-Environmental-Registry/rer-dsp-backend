@@ -34,7 +34,7 @@
       "filterByTitle": null,
       "detail": {
         "sectionTitle": "Detalhes da consulta",
-        "propertySectionTitle": "Dados do registro",
+        "areaOfInterestSectionTitle": "Dados da área de interesse",
         "registrationDateLabel": "Data de registro",
         "alterationDateLabel": "Data de alteração",
         "latitudeLabel": "Latitude",

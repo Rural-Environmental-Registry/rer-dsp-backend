@@ -39,6 +39,7 @@ class InstallationConfigServiceTest {
 		assertEquals("dd/MM/yyyy", config.formats().date());
 		assertEquals("dd/MM/yyyy HH:mm:ss", config.formats().dateTime());
 		assertEquals("Search details", config.screens().home().detail().sectionTitle());
+		assertEquals("Area of interest data", config.screens().home().detail().areaOfInterestSectionTitle());
 		assertEquals("Registration date", config.screens().home().detail().registrationDateLabel());
 		assertFalse(config.hierarchy().isEmpty());
 	}
@@ -57,6 +58,7 @@ class InstallationConfigServiceTest {
 		assertEquals("Município", config.hierarchy().get(2).label());
 		assertEquals("Identificador", config.screens().home().identifier().label());
 		assertEquals("Detalhes da consulta", config.screens().home().detail().sectionTitle());
+		assertEquals("Dados da área de interesse", config.screens().home().detail().areaOfInterestSectionTitle());
 		assertEquals("Data de registro", config.screens().home().detail().registrationDateLabel());
 		assertEquals("ha", config.areaOfInterest().areaUnit());
 		assertEquals("ha", config.areaOfInterest().areaUnitLabel());
