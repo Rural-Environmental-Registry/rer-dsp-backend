@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@Tag(name = "Downloads", description = "Themes and files for download (mock — no S3/GeoServer)")
+@Tag(name = "Downloads", description = "Themes and files for download (GeoServer WFS)")
 public class DownloadController implements DownloadApi {
 
 	private final DownloadService downloadService;
@@ -35,7 +35,7 @@ public class DownloadController implements DownloadApi {
 	}
 
 	@Override
-	@Operation(summary = "Downloads a mock file for theme/format")
+	@Operation(summary = "Downloads a CSV file for theme/format via GeoServer WFS")
 	public ResponseEntity<byte[]> downloadFile(String level2, String level3, String theme, String format) {
 		return downloadService.downloadFile(level2, level3, theme, format);
 	}

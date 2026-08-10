@@ -29,7 +29,7 @@ class DownloadControllerTest {
 	@Test
 	void getThemes_ShouldDelegateToService() {
 		List<DownloadThemeResponse> themes = List.of(
-				new DownloadThemeResponse("theme_alpha", "Tema Alpha", List.of("csv"), true)
+				new DownloadThemeResponse("theme_alpha", "Theme Alpha", List.of("csv"), true)
 		);
 		when(downloadService.getThemes()).thenReturn(themes);
 
@@ -44,7 +44,7 @@ class DownloadControllerTest {
 		DownloadSearchRequest request = new DownloadSearchRequest();
 		request.setLevel2("DF");
 		List<DownloadItemResponse> items = List.of(
-				new DownloadItemResponse("theme_alpha", "Tema Alpha", List.of(), "2026-06-01")
+				new DownloadItemResponse("theme_alpha", "Theme Alpha", List.of(), "2026-06-01")
 		);
 		when(downloadService.search(request)).thenReturn(items);
 

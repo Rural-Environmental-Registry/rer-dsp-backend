@@ -1,10 +1,15 @@
 package br.car.dsp.service;
 
+import br.car.dsp.config.download.DownloadThemeConfig;
 import br.car.dsp.dto.DownloadFormatStatus;
 import br.car.dsp.dto.DownloadItemResponse;
 import br.car.dsp.dto.DownloadSearchRequest;
 import br.car.dsp.dto.DownloadThemeResponse;
-import br.car.dsp.mock.DownloadThemesMockData;
+import br.car.dsp.support.DownloadFileNameBuilder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,63 +17,116 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-
 @Service
+@RequiredArgsConstructor
 public class DownloadService {
 
+	private final DownloadConfigService downloadConfigService;
+	private final DownloadTerritoryFilterBuilder territoryFilterBuilder;
+	private final GeoServerWfsClient geoServerWfsClient;
+	private final DownloadFileNameBuilder downloadFileNameBuilder;
+
 	public List<DownloadThemeResponse> getThemes() {
-		return DownloadThemesMockData.listEnabledThemes();
+		return downloadConfigService.getEnabledThemes().stream()
+				.map(theme -> new DownloadThemeResponse(
+						theme.code(),
+						theme.name(),
+						theme.formats(),
+						theme.enabled()
+				))
+				.toList();
 	}
 
 	public List<DownloadItemResponse> search(DownloadSearchRequest request) {
 		if (request == null || request.getLevel2() == null || request.getLevel2().isBlank()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nível 2 é obrigatório para buscar downloads");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Level 2 is required to search downloads");
 		}
-		return DownloadThemesMockData.search(
-				request.getLevel2().trim(),
-				blankToNull(request.getLevel3()),
-				blankToNull(request.getTheme())
-		);
+
+		String level2 = request.getLevel2().trim();
+		String level3 = blankToNull(request.getLevel3());
+		territoryFilterBuilder.validateTerritory(level2, level3);
+
+		List<DownloadThemeConfig> themes = downloadConfigService.getEnabledThemes();
+		if (request.getTheme() != null && !request.getTheme().isBlank()) {
+			themes = downloadConfigService.findEnabledTheme(request.getTheme())
+					.map(List::of)
+					.orElse(List.of());
+		}
+
+		String wfsBaseUrl = downloadConfigService.resolveWfsBaseUrl();
+		List<DownloadItemResponse> items = new ArrayList<>();
+		for (DownloadThemeConfig theme : themes) {
+			String cqlFilter = territoryFilterBuilder.buildCqlFilter(theme, level2, level3);
+			long matched = geoServerWfsClient.countFeatures(wfsBaseUrl, theme.typeName(), cqlFilter);
+			boolean available = matched > 0;
+			List<DownloadFormatStatus> formats = theme.formats().stream()
+					.map(format -> new DownloadFormatStatus(
+							format,
+							available
+									? DownloadFormatStatus.AVAILABLE
+									: DownloadFormatStatus.UNAVAILABLE
+					))
+					.toList();
+			String lastUpdate = null;
+			if (available) {
+				lastUpdate = geoServerWfsClient.fetchLatestAttributeValue(
+						wfsBaseUrl,
+						theme.typeName(),
+						cqlFilter
+				).orElse(null);
+			}
+			items.add(new DownloadItemResponse(
+					theme.code(),
+					theme.name(),
+					formats,
+					lastUpdate
+			));
+		}
+		return items;
 	}
 
 	public ResponseEntity<byte[]> downloadFile(String level2, String level3, String theme, String format) {
 		if (level2 == null || level2.isBlank()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nível 2 é obrigatório");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Level 2 is required");
 		}
 		if (theme == null || theme.isBlank() || format == null || format.isBlank()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tema e formato são obrigatórios");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Theme and format are required");
 		}
 
-		DownloadThemeResponse themeConfig = DownloadThemesMockData.findEnabledByCode(theme)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tema não encontrado"));
+		String normalizedLevel3 = blankToNull(level3);
+		territoryFilterBuilder.validateTerritory(level2.trim(), normalizedLevel3);
 
-		String normalizedFormat = format.trim().toLowerCase();
+		DownloadThemeConfig themeConfig = downloadConfigService.findEnabledTheme(theme)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Theme not found"));
+
+		String normalizedFormat = format.trim().toLowerCase(Locale.ROOT);
 		if (!themeConfig.formats().contains(normalizedFormat)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato não suportado para o tema");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Format not supported for the theme");
 		}
 
-		String status = DownloadThemesMockData.resolveStatus(
-				themeConfig.code(),
-				normalizedFormat,
+		String cqlFilter = territoryFilterBuilder.buildCqlFilter(
+				themeConfig,
 				level2.trim(),
-				blankToNull(level3)
+				normalizedLevel3
 		);
-
-		if (!DownloadFormatStatus.AVAILABLE.equals(status)) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo indisponível para download");
+		long matched = geoServerWfsClient.countFeatures(
+				downloadConfigService.resolveWfsBaseUrl(),
+				themeConfig.typeName(),
+				cqlFilter
+		);
+		if (matched <= 0) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File unavailable for download");
 		}
 
-		byte[] content = DownloadThemesMockData.buildMockFileContent(
-				level2.trim(),
-				blankToNull(level3),
-				themeConfig.code(),
-				normalizedFormat
+		byte[] content = geoServerWfsClient.downloadCsv(
+				downloadConfigService.resolveWfsBaseUrl(),
+				themeConfig.typeName(),
+				cqlFilter
 		);
-		String fileName = DownloadThemesMockData.buildFileName(
+		String fileName = downloadFileNameBuilder.build(
 				level2.trim(),
-				blankToNull(level3),
-				themeConfig.code(),
+				normalizedLevel3,
+				themeConfig.name(),
 				normalizedFormat
 		);
 

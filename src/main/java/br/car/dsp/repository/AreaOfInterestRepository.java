@@ -110,4 +110,19 @@ public interface AreaOfInterestRepository extends JpaRepository<AreaOfInterest, 
 			WHERE a.territory_level_3_id IN (:level3Ids)
 			""", nativeQuery = true)
 	ThemeTotalsAggregate sumThemesByLevel3Ids(@Param("level3Ids") Collection<String> level3Ids);
+
+	@Query("""
+			SELECT a.id
+			FROM AreaOfInterest a
+			WHERE a.territoryLevel3.id = :level3Id
+			""")
+	List<String> findIdsByTerritoryLevel3Id(@Param("level3Id") String level3Id);
+
+	@Query("""
+			SELECT a.id
+			FROM AreaOfInterest a
+			JOIN a.territoryLevel3 level3
+			WHERE level3.parent.id = :level2Id
+			""")
+	List<String> findIdsByTerritoryLevel2Id(@Param("level2Id") String level2Id);
 }

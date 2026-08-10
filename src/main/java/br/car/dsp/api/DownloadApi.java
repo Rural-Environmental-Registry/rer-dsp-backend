@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 /**
- * Theme file catalog and download (phase 1: local mock).
+ * Theme file catalog and download via GeoServer WFS.
  */
 @RequestMapping("/downloads")
 public interface DownloadApi {
