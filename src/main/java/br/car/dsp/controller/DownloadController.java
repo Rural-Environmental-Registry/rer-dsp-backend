@@ -39,4 +39,10 @@ public class DownloadController implements DownloadApi {
 	public ResponseEntity<byte[]> downloadFile(String level2, String level3, String theme, String format) {
 		return downloadService.downloadFile(level2, level3, theme, format);
 	}
+
+	@Override
+	@Operation(summary = "Downloads a ZIP bundle with CSV files for all themes linked to an AOI")
+	public ResponseEntity<byte[]> downloadFeaturesBundle(String aoiId) {
+		return downloadService.downloadFeaturesBundle(aoiId);
+	}
 }

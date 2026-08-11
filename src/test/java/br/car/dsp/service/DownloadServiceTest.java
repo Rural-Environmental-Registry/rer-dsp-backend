@@ -7,6 +7,8 @@ import br.car.dsp.dto.DownloadItemResponse;
 import br.car.dsp.dto.DownloadSearchRequest;
 import br.car.dsp.dto.DownloadThemeResponse;
 import br.car.dsp.support.DownloadFileNameBuilder;
+import br.car.dsp.support.FeaturesBundleZipBuilder;
+import br.car.dsp.repository.AreaOfInterestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,20 +40,35 @@ class DownloadServiceTest {
 	@Mock
 	private DownloadFileNameBuilder downloadFileNameBuilder;
 
+	@Mock
+	private AreaOfInterestRepository areaOfInterestRepository;
+
+	@Mock
+	private FeaturesBundleZipBuilder featuresBundleZipBuilder;
+
 	@InjectMocks
 	private DownloadService downloadService;
 
 	private DownloadThemeConfig areaTheme;
+	private DownloadThemeConfig linkedTheme;
 
 	@BeforeEach
 	void setUp() {
 		areaTheme = new DownloadThemeConfig(
 				"area_of_interest",
-				"Aeroportos",
+				"Area of interest",
 				"dsp:area-of-interest",
 				List.of("csv"),
 				true,
 				new DownloadTerritoryFilterConfig("direct", "territory_level_3_id", null)
+		);
+		linkedTheme = new DownloadThemeConfig(
+				"generic_layer",
+				"Generic layer",
+				"dsp:generic-layer",
+				List.of("csv"),
+				true,
+				new DownloadTerritoryFilterConfig("aoi_linked", null, "area_of_interest_id")
 		);
 	}
 
@@ -63,7 +80,7 @@ class DownloadServiceTest {
 
 		assertEquals(1, themes.size());
 		assertEquals("area_of_interest", themes.getFirst().code());
-		assertEquals("Aeroportos", themes.getFirst().name());
+		assertEquals("Area of interest", themes.getFirst().name());
 	}
 
 	@Test
@@ -173,8 +190,8 @@ class DownloadServiceTest {
 				.thenReturn(1L);
 		when(geoServerWfsClient.downloadCsv(anyString(), eq("dsp:area-of-interest"), anyString()))
 				.thenReturn("id,name\n1,test\n".getBytes());
-		when(downloadFileNameBuilder.build("DF", null, "Aeroportos", "csv"))
-				.thenReturn("aeroportos_df-distrito-federal.csv");
+		when(downloadFileNameBuilder.build("DF", null, "Area of interest", "csv"))
+				.thenReturn("area-of-interest_df.csv");
 
 		ResponseEntity<byte[]> response = downloadService.downloadFile("DF", null, "area_of_interest", "csv");
 
@@ -182,7 +199,7 @@ class DownloadServiceTest {
 		assertNotNull(response.getBody());
 		assertTrue(response.getBody().length > 0);
 		assertTrue(response.getHeaders().getFirst("Content-Disposition")
-				.contains("aeroportos_df-distrito-federal.csv"));
+				.contains("area-of-interest_df.csv"));
 	}
 
 	@Test
@@ -197,6 +214,68 @@ class DownloadServiceTest {
 		ResponseStatusException exception = assertThrows(
 				ResponseStatusException.class,
 				() -> downloadService.downloadFile("DF", null, "area_of_interest", "csv")
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void downloadFeaturesBundle_ShouldReturnZipWithAvailableThemes() throws Exception {
+		when(areaOfInterestRepository.existsById("DEMO-001")).thenReturn(true);
+		when(downloadConfigService.getEnabledThemes()).thenReturn(List.of(areaTheme, linkedTheme));
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(territoryFilterBuilder.buildAoiScopedCqlFilter(areaTheme, "DEMO-001"))
+				.thenReturn("id = 'DEMO-001'");
+		when(territoryFilterBuilder.buildAoiScopedCqlFilter(linkedTheme, "DEMO-001"))
+				.thenReturn("area_of_interest_id = 'DEMO-001'");
+		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
+				.thenReturn(1L);
+		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:generic-layer"), anyString()))
+				.thenReturn(1L);
+		when(geoServerWfsClient.downloadCsv(anyString(), eq("dsp:area-of-interest"), anyString()))
+				.thenReturn("id\nDEMO-001\n".getBytes());
+		when(geoServerWfsClient.downloadCsv(anyString(), eq("dsp:generic-layer"), anyString()))
+				.thenReturn("area_of_interest_id\nDEMO-001\n".getBytes());
+		when(downloadFileNameBuilder.buildForAoi("DEMO-001", "Area of interest", "csv"))
+				.thenReturn("area-of-interest_demo-001.csv");
+		when(downloadFileNameBuilder.buildForAoi("DEMO-001", "Generic layer", "csv"))
+				.thenReturn("generic-layer_demo-001.csv");
+		when(downloadFileNameBuilder.buildBundleArchiveName("DEMO-001")).thenReturn("demo-001_features.zip");
+		when(featuresBundleZipBuilder.build(anyMap())).thenReturn(new byte[] { 80, 75, 3, 4 });
+
+		ResponseEntity<byte[]> response = downloadService.downloadFeaturesBundle("DEMO-001");
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals("application/zip", response.getHeaders().getContentType().toString());
+		assertTrue(response.getHeaders().getFirst("Content-Disposition").contains("demo-001_features.zip"));
+		verify(featuresBundleZipBuilder).build(anyMap());
+	}
+
+	@Test
+	void downloadFeaturesBundle_ShouldReturnNotFoundWhenAoiDoesNotExist() {
+		when(areaOfInterestRepository.existsById("UNKNOWN")).thenReturn(false);
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> downloadService.downloadFeaturesBundle("UNKNOWN")
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void downloadFeaturesBundle_ShouldReturnNotFoundWhenNoThemesHaveFeatures() {
+		when(areaOfInterestRepository.existsById("DEMO-001")).thenReturn(true);
+		when(downloadConfigService.getEnabledThemes()).thenReturn(List.of(areaTheme));
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(territoryFilterBuilder.buildAoiScopedCqlFilter(areaTheme, "DEMO-001"))
+				.thenReturn("id = 'DEMO-001'");
+		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
+				.thenReturn(0L);
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> downloadService.downloadFeaturesBundle("DEMO-001")
 		);
 
 		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());

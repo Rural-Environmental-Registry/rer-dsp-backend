@@ -5,10 +5,15 @@ import br.car.dsp.dto.DownloadFormatStatus;
 import br.car.dsp.dto.DownloadItemResponse;
 import br.car.dsp.dto.DownloadSearchRequest;
 import br.car.dsp.dto.DownloadThemeResponse;
+import br.car.dsp.repository.AreaOfInterestRepository;
 import br.car.dsp.support.DownloadFileNameBuilder;
+import br.car.dsp.support.FeaturesBundleZipBuilder;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,6 +30,8 @@ public class DownloadService {
 	private final DownloadTerritoryFilterBuilder territoryFilterBuilder;
 	private final GeoServerWfsClient geoServerWfsClient;
 	private final DownloadFileNameBuilder downloadFileNameBuilder;
+	private final AreaOfInterestRepository areaOfInterestRepository;
+	private final FeaturesBundleZipBuilder featuresBundleZipBuilder;
 
 	public List<DownloadThemeResponse> getThemes() {
 		return downloadConfigService.getEnabledThemes().stream()
@@ -136,6 +143,61 @@ public class DownloadService {
 		headers.setContentLength(content.length);
 
 		return new ResponseEntity<>(content, headers, HttpStatus.OK);
+	}
+
+	public ResponseEntity<byte[]> downloadFeaturesBundle(String aoiId) {
+		String normalizedAoiId = blankToNull(aoiId);
+		if (normalizedAoiId == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Area of interest id is required");
+		}
+		if (!areaOfInterestRepository.existsById(normalizedAoiId)) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Area of interest not found");
+		}
+
+		String wfsBaseUrl = downloadConfigService.resolveWfsBaseUrl();
+		Map<String, byte[]> entries = new LinkedHashMap<>();
+
+		for (DownloadThemeConfig theme : downloadConfigService.getEnabledThemes()) {
+			if (!theme.formats().contains("csv")) {
+				continue;
+			}
+
+			String cqlFilter = territoryFilterBuilder.buildAoiScopedCqlFilter(theme, normalizedAoiId);
+			long matched = geoServerWfsClient.countFeatures(wfsBaseUrl, theme.typeName(), cqlFilter);
+			if (matched <= 0) {
+				continue;
+			}
+
+			byte[] content = geoServerWfsClient.downloadCsv(wfsBaseUrl, theme.typeName(), cqlFilter);
+			String entryName = downloadFileNameBuilder.buildForAoi(normalizedAoiId, theme.name(), "csv");
+			entries.put(entryName, content);
+		}
+
+		if (entries.isEmpty()) {
+			throw new ResponseStatusException(
+					HttpStatus.NOT_FOUND,
+					"No downloadable features for the selected area of interest"
+			);
+		}
+
+		byte[] zipBytes;
+		try {
+			zipBytes = featuresBundleZipBuilder.build(entries);
+		} catch (IOException ex) {
+			throw new ResponseStatusException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					"Failed to build features bundle",
+					ex
+			);
+		}
+
+		String fileName = downloadFileNameBuilder.buildBundleArchiveName(normalizedAoiId);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.parseMediaType("application/zip"));
+		headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+		headers.setContentLength(zipBytes.length);
+
+		return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
 	}
 
 	private static String blankToNull(String value) {

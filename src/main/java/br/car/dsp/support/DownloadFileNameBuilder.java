@@ -34,6 +34,18 @@ public class DownloadFileNameBuilder {
 		return String.join("_", segments) + "." + normalizeExtension(format);
 	}
 
+	public String buildForAoi(String aoiId, String themeName, String format) {
+		return toFileSegment(themeName, "theme")
+				+ "_"
+				+ toFileSegment(aoiId, "aoi")
+				+ "."
+				+ normalizeExtension(format);
+	}
+
+	public String buildBundleArchiveName(String aoiId) {
+		return toFileSegment(aoiId, "aoi") + "_features.zip";
+	}
+
 	private String resolveLevel2Segment(String level2Id) {
 		return level2Repository.findById(level2Id)
 				.map(TerritoryLevel2::getName)

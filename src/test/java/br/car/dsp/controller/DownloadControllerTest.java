@@ -64,4 +64,15 @@ class DownloadControllerTest {
 		assertEquals(response, result);
 		verify(downloadService).downloadFile("DF", null, "theme_alpha", "csv");
 	}
+
+	@Test
+	void downloadFeaturesBundle_ShouldDelegateToService() {
+		ResponseEntity<byte[]> response = ResponseEntity.ok(new byte[]{80, 75});
+		when(downloadService.downloadFeaturesBundle("DEMO-001")).thenReturn(response);
+
+		ResponseEntity<byte[]> result = downloadController.downloadFeaturesBundle("DEMO-001");
+
+		assertEquals(response, result);
+		verify(downloadService).downloadFeaturesBundle("DEMO-001");
+	}
 }

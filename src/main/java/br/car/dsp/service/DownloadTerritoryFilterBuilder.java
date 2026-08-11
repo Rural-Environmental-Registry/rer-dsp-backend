@@ -47,14 +47,25 @@ public class DownloadTerritoryFilterBuilder {
 		}
 	}
 
-	public String buildCqlFilter(DownloadThemeConfig theme, String level2, String level3) {
-		DownloadTerritoryFilterConfig filter = theme.territoryFilter();
-		if (filter == null || filter.strategy() == null) {
-			throw new ResponseStatusException(
+	public String buildAoiScopedCqlFilter(DownloadThemeConfig theme, String aoiId) {
+		DownloadTerritoryFilterConfig filter = requireFilter(theme);
+		String normalizedAoiId = requireNonBlank(aoiId, "Area of interest id is required");
+
+		return switch (filter.strategy().toLowerCase(Locale.ROOT)) {
+			case "direct" -> "id = '" + escapeCql(normalizedAoiId) + "'";
+			case "aoi_linked" -> {
+				String field = requireField(filter.aoiLinkField(), "aoiLinkField");
+				yield field + " = '" + escapeCql(normalizedAoiId) + "'";
+			}
+			default -> throw new ResponseStatusException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					"Territory configuration missing for theme " + theme.code()
+					"Unsupported territory strategy: " + filter.strategy()
 			);
-		}
+		};
+	}
+
+	public String buildCqlFilter(DownloadThemeConfig theme, String level2, String level3) {
+		DownloadTerritoryFilterConfig filter = requireFilter(theme);
 
 		return switch (filter.strategy().toLowerCase(Locale.ROOT)) {
 			case "direct" -> buildDirectFilter(filter, level2, level3);
@@ -102,6 +113,17 @@ public class DownloadTerritoryFilterBuilder {
 			return "1=0";
 		}
 		return field + " IN (" + joinQuoted(aoiIds) + ")";
+	}
+
+	private static DownloadTerritoryFilterConfig requireFilter(DownloadThemeConfig theme) {
+		DownloadTerritoryFilterConfig filter = theme.territoryFilter();
+		if (filter == null || filter.strategy() == null) {
+			throw new ResponseStatusException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					"Territory configuration missing for theme " + theme.code()
+			);
+		}
+		return filter;
 	}
 
 	private static String requireField(String value, String label) {

@@ -36,4 +36,7 @@ public interface DownloadApi {
 			@RequestParam String theme,
 			@RequestParam String format
 	);
+
+	@GetMapping(value = "/features-bundle")
+	ResponseEntity<byte[]> downloadFeaturesBundle(@RequestParam String aoiId);
 }

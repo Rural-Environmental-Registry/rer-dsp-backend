@@ -74,4 +74,17 @@ class DownloadFileNameBuilderTest {
 		assertEquals("csv", DownloadFileNameBuilder.normalizeExtension(".csv"));
 		assertEquals("bin", DownloadFileNameBuilder.normalizeExtension(" "));
 	}
+
+	@Test
+	void buildForAoi_ShouldUseThemeAndAoiSegments() {
+		assertEquals(
+				"demo-properties_demo-001.csv",
+				builder.buildForAoi("DEMO-001", "Demo properties", "csv")
+		);
+	}
+
+	@Test
+	void buildBundleArchiveName_ShouldSuffixFeaturesZip() {
+		assertEquals("demo-001_features.zip", builder.buildBundleArchiveName("DEMO-001"));
+	}
 }
