@@ -15,7 +15,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class GeoServerWfsClientTest {
 
-	private static final String WFS_BASE_URL = "http://localhost:22668/geoserver/dsp/wfs";
+	private static final String WFS_BASE_URL = "http://localhost:22669/geoserver/dsp/wfs";
 	private static final String TYPE_NAME = "dsp:area-of-interest";
 	private static final String CQL_FILTER = "territory_level_3_id IN ('5300108')";
 

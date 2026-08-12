@@ -101,7 +101,7 @@ class DownloadServiceTest {
 		request.setLevel2("DF");
 
 		when(downloadConfigService.getEnabledThemes()).thenReturn(List.of(areaTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildCqlFilter(areaTheme, "DF", null))
 				.thenReturn("territory_level_3_id IN ('5300108')");
 		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
@@ -125,7 +125,7 @@ class DownloadServiceTest {
 		request.setLevel2("DF");
 
 		when(downloadConfigService.getEnabledThemes()).thenReturn(List.of(areaTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildCqlFilter(areaTheme, "DF", null))
 				.thenReturn("territory_level_3_id IN ('5300108')");
 		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
@@ -144,7 +144,7 @@ class DownloadServiceTest {
 		request.setLevel2("DF");
 
 		when(downloadConfigService.getEnabledThemes()).thenReturn(List.of(areaTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildCqlFilter(areaTheme, "DF", null))
 				.thenReturn("territory_level_3_id IN ('5300108')");
 		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
@@ -167,7 +167,7 @@ class DownloadServiceTest {
 		request.setTheme("area_of_interest");
 
 		when(downloadConfigService.findEnabledTheme("area_of_interest")).thenReturn(java.util.Optional.of(areaTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildCqlFilter(areaTheme, "DF", null))
 				.thenReturn("territory_level_3_id IN ('5300108')");
 		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
@@ -183,7 +183,7 @@ class DownloadServiceTest {
 	@Test
 	void downloadFile_ShouldReturnCsvBytesWhenAvailable() {
 		when(downloadConfigService.findEnabledTheme("area_of_interest")).thenReturn(java.util.Optional.of(areaTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildCqlFilter(areaTheme, "DF", null))
 				.thenReturn("territory_level_3_id IN ('5300108')");
 		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
@@ -205,7 +205,7 @@ class DownloadServiceTest {
 	@Test
 	void downloadFile_ShouldReturnNotFoundWhenUnavailable() {
 		when(downloadConfigService.findEnabledTheme("area_of_interest")).thenReturn(java.util.Optional.of(areaTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildCqlFilter(areaTheme, "DF", null))
 				.thenReturn("territory_level_3_id IN ('')");
 		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
@@ -223,7 +223,7 @@ class DownloadServiceTest {
 	void downloadFeaturesBundle_ShouldReturnZipWithAvailableThemes() throws Exception {
 		when(areaOfInterestRepository.existsById("DEMO-001")).thenReturn(true);
 		when(downloadConfigService.getEnabledThemes()).thenReturn(List.of(areaTheme, linkedTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildAoiScopedCqlFilter(areaTheme, "DEMO-001"))
 				.thenReturn("id = 'DEMO-001'");
 		when(territoryFilterBuilder.buildAoiScopedCqlFilter(linkedTheme, "DEMO-001"))
@@ -267,7 +267,7 @@ class DownloadServiceTest {
 	void downloadFeaturesBundle_ShouldReturnNotFoundWhenNoThemesHaveFeatures() {
 		when(areaOfInterestRepository.existsById("DEMO-001")).thenReturn(true);
 		when(downloadConfigService.getEnabledThemes()).thenReturn(List.of(areaTheme));
-		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22668/geoserver/dsp/wfs");
+		when(downloadConfigService.resolveWfsBaseUrl()).thenReturn("http://localhost:22669/geoserver/dsp/wfs");
 		when(territoryFilterBuilder.buildAoiScopedCqlFilter(areaTheme, "DEMO-001"))
 				.thenReturn("id = 'DEMO-001'");
 		when(geoServerWfsClient.countFeatures(anyString(), eq("dsp:area-of-interest"), anyString()))
