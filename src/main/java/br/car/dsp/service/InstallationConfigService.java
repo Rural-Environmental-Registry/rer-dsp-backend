@@ -3,7 +3,9 @@ package br.car.dsp.service;
 import br.car.dsp.config.InstallationConfigProperties;
 import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
 import br.car.dsp.dto.FormatsConfigResponse;
+import br.car.dsp.dto.InitialMapViewConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
+import br.car.dsp.dto.MapUiConfigResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,8 +67,11 @@ public class InstallationConfigService {
 	private InstallationConfigResponse normalize(InstallationConfigResponse loaded) {
 		AreaOfInterestMeasuresConfigResponse measures = normalizeAreaOfInterest(loaded.areaOfInterest());
 		FormatsConfigResponse formats = normalizeFormats(loaded.formats());
+		MapUiConfigResponse map = normalizeMap(loaded.map());
 
-		if (measures.equals(loaded.areaOfInterest()) && formats.equals(loaded.formats())) {
+		if (measures.equals(loaded.areaOfInterest())
+				&& formats.equals(loaded.formats())
+				&& map == loaded.map()) {
 			return loaded;
 		}
 		return new InstallationConfigResponse(
@@ -74,8 +79,75 @@ public class InstallationConfigService {
 				loaded.screens(),
 				loaded.kpis(),
 				measures,
-				formats
+				formats,
+				map
 		);
+	}
+
+	private MapUiConfigResponse normalizeMap(MapUiConfigResponse map) {
+		if (map == null || map.initialView() == null) {
+			return null;
+		}
+
+		InitialMapViewConfigResponse initialView = map.initialView();
+		String mode = initialView.mode();
+		if (mode == null || mode.isBlank()) {
+			log.warn("map.initialView.mode is missing. Ignoring map configuration.");
+			return null;
+		}
+
+		mode = mode.trim();
+		return switch (mode) {
+			case "territorial_bbox", "planet" -> new MapUiConfigResponse(
+					new InitialMapViewConfigResponse(mode, null, null, null)
+			);
+			case "manual" -> normalizeManualInitialView(initialView);
+			default -> {
+				log.warn("map.initialView.mode '{}' is invalid. Ignoring map configuration.", mode);
+				yield null;
+			}
+		};
+	}
+
+	private MapUiConfigResponse normalizeManualInitialView(InitialMapViewConfigResponse initialView) {
+		Double latitude = initialView.latitude();
+		Double longitude = initialView.longitude();
+		Integer zoom = initialView.zoom();
+
+		if (latitude == null || longitude == null || zoom == null) {
+			log.warn(
+					"map.initialView manual mode requires latitude, longitude, and zoom. "
+							+ "Ignoring map configuration."
+			);
+			return null;
+		}
+
+		if (!isValidLatitude(latitude) || !isValidLongitude(longitude) || !isValidZoom(zoom)) {
+			log.warn(
+					"map.initialView manual coordinates are invalid (latitude={}, longitude={}, zoom={}). "
+							+ "Ignoring map configuration.",
+					latitude,
+					longitude,
+					zoom
+			);
+			return null;
+		}
+
+		return new MapUiConfigResponse(
+				new InitialMapViewConfigResponse("manual", latitude, longitude, zoom)
+		);
+	}
+
+	private static boolean isValidLatitude(double latitude) {
+		return Double.isFinite(latitude) && latitude >= -90 && latitude <= 90;
+	}
+
+	private static boolean isValidLongitude(double longitude) {
+		return Double.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+	}
+
+	private static boolean isValidZoom(int zoom) {
+		return zoom >= 0 && zoom <= 16;
 	}
 
 	private AreaOfInterestMeasuresConfigResponse normalizeAreaOfInterest(

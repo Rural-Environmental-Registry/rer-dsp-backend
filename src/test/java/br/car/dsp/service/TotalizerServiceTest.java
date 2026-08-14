@@ -279,6 +279,7 @@ class TotalizerServiceTest {
 				null,
 				new HomeKpisConfigResponse(5, TotalizerService.CODE_AREA_OF_INTEREST, cards),
 				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
+				null,
 				null
 		);
 	}

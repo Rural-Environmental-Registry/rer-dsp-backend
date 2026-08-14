@@ -72,7 +72,8 @@ class ConfigControllerTest {
 						))
 				),
 				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
-				FormatsConfigResponse.defaults()
+				FormatsConfigResponse.defaults(),
+				null
 		);
 		when(installationConfigService.getInstallationConfig()).thenReturn(expected);
 

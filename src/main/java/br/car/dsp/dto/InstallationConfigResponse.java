@@ -7,7 +7,8 @@ public record InstallationConfigResponse(
 		ScreensConfigResponse screens,
 		HomeKpisConfigResponse kpis,
 		AreaOfInterestMeasuresConfigResponse areaOfInterest,
-		FormatsConfigResponse formats
+		FormatsConfigResponse formats,
+		MapUiConfigResponse map
 ) {
 
 	public InstallationConfigResponse {

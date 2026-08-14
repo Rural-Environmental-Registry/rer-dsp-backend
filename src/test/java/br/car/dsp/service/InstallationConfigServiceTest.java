@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class InstallationConfigServiceTest {
 
@@ -93,5 +94,136 @@ class InstallationConfigServiceTest {
 		assertEquals("campos de futebol", config.areaOfInterest().areaUnitLabel());
 		assertEquals("yyyy-MM-dd", config.formats().date());
 		assertEquals("yyyy-MM-dd'T'HH:mm:ss", config.formats().dateTime());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldLoadManualInitialMapView() throws Exception {
+		Path temp = Files.createTempFile("installation-config-map-view", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": { "home": null, "downloads": null },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
+				  "map": {
+				    "initialView": {
+				      "mode": "manual",
+				      "latitude": 39.5,
+				      "longitude": -8.0,
+				      "zoom": 7
+				    }
+				  }
+				}
+				"""
+		);
+
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile(temp.toAbsolutePath().toString());
+
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+		InstallationConfigResponse config = service.getInstallationConfig();
+
+		assertNotNull(config.map());
+		assertEquals("manual", config.map().initialView().mode());
+		assertEquals(39.5, config.map().initialView().latitude(), 1e-9);
+		assertEquals(-8.0, config.map().initialView().longitude(), 1e-9);
+		assertEquals(7, config.map().initialView().zoom());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldLoadTerritorialBboxInitialMapView() throws Exception {
+		Path temp = Files.createTempFile("installation-config-map-view-territorial", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": { "home": null, "downloads": null },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
+				  "map": {
+				    "initialView": {
+				      "mode": "territorial_bbox",
+				      "latitude": null,
+				      "longitude": null,
+				      "zoom": null
+				    }
+				  }
+				}
+				"""
+		);
+
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile(temp.toAbsolutePath().toString());
+
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+		InstallationConfigResponse config = service.getInstallationConfig();
+
+		assertNotNull(config.map());
+		assertEquals("territorial_bbox", config.map().initialView().mode());
+		assertNull(config.map().initialView().latitude());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldLoadPlanetInitialMapView() throws Exception {
+		Path temp = Files.createTempFile("installation-config-map-view-planet", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": { "home": null, "downloads": null },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
+				  "map": {
+				    "initialView": {
+				      "mode": "planet",
+				      "latitude": null,
+				      "longitude": null,
+				      "zoom": null
+				    }
+				  }
+				}
+				"""
+		);
+
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile(temp.toAbsolutePath().toString());
+
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+		InstallationConfigResponse config = service.getInstallationConfig();
+
+		assertNotNull(config.map());
+		assertEquals("planet", config.map().initialView().mode());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldIgnoreInvalidManualInitialMapView() throws Exception {
+		Path temp = Files.createTempFile("installation-config-invalid-map-view", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": { "home": null, "downloads": null },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
+				  "map": {
+				    "initialView": {
+				      "mode": "manual",
+				      "latitude": 120.0,
+				      "longitude": -8.0,
+				      "zoom": 7
+				    }
+				  }
+				}
+				"""
+		);
+
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile(temp.toAbsolutePath().toString());
+
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+		InstallationConfigResponse config = service.getInstallationConfig();
+
+		assertNull(config.map());
 	}
 }
