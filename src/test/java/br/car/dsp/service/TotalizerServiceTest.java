@@ -16,6 +16,7 @@ import br.car.dsp.model.TerritoryLevel3;
 import br.car.dsp.repository.AreaOfInterestRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import org.springframework.web.server.ResponseStatusException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -254,6 +256,458 @@ class TotalizerServiceTest {
 		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
 	}
 
+	@Test
+	void getTotalizers_WhenKpisMissing_ShouldUseFallbackPrimaryCardWithDefaultUnits() {
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithoutKpis(null));
+		when(areaOfInterestRepository.aggregateAll())
+				.thenReturn(aggregate(10L, new BigDecimal("25.4")));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(1, result.size());
+		TotalizerResponse primary = result.getFirst();
+		assertEquals(TotalizerService.CODE_AREA_OF_INTEREST, primary.code());
+		assertEquals(TotalizerService.CODE_AREA_OF_INTEREST, primary.name());
+		assertEquals(10.0, primary.value());
+		assertEquals(25L, primary.subItemValue());
+		assertEquals(AreaOfInterestMeasuresConfigResponse.DEFAULT_LABEL, primary.unitOfMeasurement());
+		assertEquals(AreaOfInterestMeasuresConfigResponse.DEFAULT_UNIT, primary.subItemName());
+	}
+
+	@Test
+	void getTotalizers_WhenKpisCardsAreEmpty_ShouldUseFallbackPrimaryCard() {
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithEmptyKpiCards());
+		when(areaOfInterestRepository.aggregateAll())
+				.thenReturn(aggregate(3L, new BigDecimal("10")));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(1, result.size());
+		assertEquals(TotalizerService.CODE_AREA_OF_INTEREST, result.getFirst().code());
+		assertEquals(3.0, result.getFirst().value());
+	}
+
+	@Test
+	void getTotalizers_WhenKpisMissing_ShouldUseAreaOfInterestUnitsFromInstallationConfig() {
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithoutKpis(
+						new AreaOfInterestMeasuresConfigResponse("hectares", "ha")
+				));
+		when(areaOfInterestRepository.aggregateAll())
+				.thenReturn(aggregate(1L, new BigDecimal("1")));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		TotalizerResponse primary = result.getFirst();
+		assertEquals("ha", primary.unitOfMeasurement());
+		assertEquals("hectares", primary.subItemName());
+	}
+
+	@Test
+	void getDetailsByCoordinates_WhenSelectedIdMissing_ShouldThrowNotFound() {
+		when(areaOfInterestRepository.findIdsContainingPoint(-15.75, -47.85))
+				.thenReturn(List.of("DF-999"));
+		when(areaOfInterestRepository.findById("DF-999")).thenReturn(Optional.empty());
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> totalizerService.getDetailsByCoordinates(-15.75, -47.85)
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getTotalizers_WhenKpisCardsNull_ShouldUseFallbackPrimaryCard() {
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(new InstallationConfigResponse(
+						List.of(),
+						null,
+						new HomeKpisConfigResponse(5, TotalizerService.CODE_AREA_OF_INTEREST, null),
+						new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
+						null,
+						null
+				));
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(4L, new BigDecimal("8")));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(1, result.size());
+		assertEquals(TotalizerService.CODE_AREA_OF_INTEREST, result.getFirst().code());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenLevel2HasOnlyName_ShouldReturnPartialLevelRef() {
+		TerritoryLevel2 level2 = new TerritoryLevel2();
+		level2.setName("Distrito Federal");
+
+		TerritoryLevel3 level3 = new TerritoryLevel3();
+		level3.setId("5300108");
+		level3.setName("Brasília");
+		level3.setParent(level2);
+
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		areaOfInterest.setTerritoryLevel3(level3);
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertNull(result.territory().level2().id());
+		assertEquals("Distrito Federal", result.territory().level2().name());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenNull_ShouldThrowNotFound() {
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> totalizerService.getDetailByIdentifier(null)
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenLevel2HasOnlyId_ShouldReturnPartialLevelRef() {
+		TerritoryLevel2 level2 = new TerritoryLevel2();
+		level2.setId("DF");
+
+		TerritoryLevel3 level3 = new TerritoryLevel3();
+		level3.setId("5300108");
+		level3.setName("Brasília");
+		level3.setParent(level2);
+
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		areaOfInterest.setTerritoryLevel3(level3);
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertEquals("DF", result.territory().level2().id());
+		assertNull(result.territory().level2().name());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenCentroidLongitudeMissing_ShouldReturnNullCoordinates() {
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+		when(areaOfInterestRepository.findCentroidWgs84("DF-123"))
+				.thenReturn(Optional.of(partialCentroid(-15.75, null)));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertNull(result.latitude());
+		assertNull(result.longitude());
+	}
+
+	@Test
+	void getDetailsByCoordinates_WhenLongitudeNull_ShouldThrowNotFound() {
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> totalizerService.getDetailsByCoordinates(-15.75, null)
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getTotalizers_WhenAggregateCountNullButAreaPresent_ShouldUseZeroCount() {
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(null, new BigDecimal("12.6")));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(0.0, result.getFirst().value());
+		assertEquals(13L, result.getFirst().subItemValue());
+	}
+
+	@Test
+	void getTotalizers_WhenAggregateAreaNullButCountPresent_ShouldUseZeroArea() {
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(7L, null));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(7.0, result.getFirst().value());
+		assertEquals(0L, result.getFirst().subItemValue());
+	}
+
+	@Test
+	void getTotalizers_WhenFilterHasNullIdLists_ShouldAggregateAll() {
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(2L, BigDecimal.ONE));
+
+		TotalizerFilterRequest filter = new TotalizerFilterRequest();
+		filter.setLevel2Ids(null);
+		filter.setLevel3Ids(null);
+
+		totalizerService.getTotalizers(filter);
+
+		verify(areaOfInterestRepository).aggregateAll();
+	}
+
+	@Test
+	void getTotalizers_WhenKpisCardsContainNullEntry_ShouldIgnoreNullCard() {
+		List<KpiCardConfigResponse> cards = new ArrayList<>();
+		cards.add(null);
+		cards.add(card(TotalizerService.CODE_AREA_OF_INTEREST, "Primary", 1));
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithCustomCards(cards, 5));
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(1L, BigDecimal.ONE));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(1, result.size());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenBlank_ShouldThrowNotFound() {
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> totalizerService.getDetailByIdentifier("   ")
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenTerritoryLevel3Missing_ShouldReturnNullTerritoryRefs() {
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		areaOfInterest.setTerritoryLevel3(null);
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertNull(result.territory().level2());
+		assertNull(result.territory().level3());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenLevel3WithoutParent_ShouldReturnOnlyLevel3() {
+		TerritoryLevel3 level3 = new TerritoryLevel3();
+		level3.setId("5300108");
+		level3.setName("Brasília");
+
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		areaOfInterest.setTerritoryLevel3(level3);
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertNull(result.territory().level2());
+		assertEquals("5300108", result.territory().level3().id());
+		assertEquals("Brasília", result.territory().level3().name());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenDatesMissing_ShouldReturnNullDates() {
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		areaOfInterest.setRegistrationDate(null);
+		areaOfInterest.setAlterationDate(null);
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertNull(result.registrationDate());
+		assertNull(result.alterationDate());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenCentroidProjectionMissing_ShouldReturnNullCoordinates() {
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+		when(areaOfInterestRepository.findCentroidWgs84("DF-123")).thenReturn(Optional.empty());
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertNull(result.latitude());
+		assertNull(result.longitude());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenCentroidLatitudeMissing_ShouldReturnNullCoordinates() {
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+		when(areaOfInterestRepository.findCentroidWgs84("DF-123"))
+				.thenReturn(Optional.of(partialCentroid(null, -47.85)));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertNull(result.latitude());
+		assertNull(result.longitude());
+	}
+
+	@Test
+	void getDetailsByCoordinates_WhenMatchingIdsNull_ShouldThrowNotFound() {
+		when(areaOfInterestRepository.findIdsContainingPoint(-15.75, -47.85)).thenReturn(null);
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> totalizerService.getDetailsByCoordinates(-15.75, -47.85)
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getTotalizers_ShouldSkipNullAndBlankCards() {
+		List<KpiCardConfigResponse> cards = new ArrayList<>();
+		cards.add(null);
+		cards.add(new KpiCardConfigResponse(" ", "Blank", "ha", null, null, 2, false));
+		cards.add(new KpiCardConfigResponse(
+				TotalizerService.CODE_AREA_OF_INTEREST,
+				"Registered properties",
+				"un.",
+				"ha",
+				null,
+				1,
+				true
+		));
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithCustomCards(cards, 5));
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(4L, new BigDecimal("8")));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(1, result.size());
+		assertEquals(TotalizerService.CODE_AREA_OF_INTEREST, result.getFirst().code());
+	}
+
+	@Test
+	void getTotalizers_WhenMaxCardsIsZero_ShouldUseDefaultLimit() {
+		List<KpiCardConfigResponse> cards = List.of(
+				card(TotalizerService.CODE_AREA_OF_INTEREST, "Primary", 1),
+				card(TotalizerService.CODE_THEME_1, "Theme 1", 2),
+				card(TotalizerService.CODE_THEME_2, "Theme 2", 3),
+				card(TotalizerService.CODE_THEME_3, "Theme 3", 4),
+				card(TotalizerService.CODE_THEME_4, "Theme 4", 5),
+				card("EXTRA_THEME", "Extra", 6)
+		);
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithCustomCards(cards, 0));
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(1L, BigDecimal.ONE));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(5, result.size());
+		assertTrue(result.stream().noneMatch(item -> "EXTRA_THEME".equals(item.code())));
+	}
+
+	@Test
+	void getTotalizers_WhenCardOrderIsZero_ShouldSortAfterPositiveOrders() {
+		List<KpiCardConfigResponse> cards = List.of(
+				card(TotalizerService.CODE_THEME_1, "Theme later", 0),
+				card(TotalizerService.CODE_AREA_OF_INTEREST, "Primary", 1)
+		);
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithCustomCards(cards, 5));
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(1L, BigDecimal.ONE));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(TotalizerService.CODE_AREA_OF_INTEREST, result.getFirst().code());
+		assertEquals(TotalizerService.CODE_THEME_1, result.get(1).code());
+	}
+
+	@Test
+	void getTotalizers_WhenAggregateFieldsAreNull_ShouldReturnZerosForPrimaryCard() {
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(null, null));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		TotalizerResponse primary = result.getFirst();
+		assertEquals(0.0, primary.value());
+		assertEquals(0L, primary.subItemValue());
+	}
+
+	@Test
+	void getTotalizers_WhenThemeAggregateIsNull_ShouldReturnZeroForThemeCards() {
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(1L, BigDecimal.ONE));
+		when(areaOfInterestRepository.sumThemesAll()).thenReturn(null);
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(0.0, result.get(1).value());
+	}
+
+	@Test
+	void getTotalizers_WhenThemeValuesAreNull_ShouldTreatAsZero() {
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(1L, BigDecimal.ONE));
+		when(areaOfInterestRepository.sumThemesAll()).thenReturn(themes(null, null, null, null));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(0.0, result.get(1).value());
+		assertEquals(0.0, result.get(2).value());
+	}
+
+	@Test
+	void getTotalizers_WhenUnknownThemeCode_ShouldReturnZero() {
+		List<KpiCardConfigResponse> cards = List.of(
+				card(TotalizerService.CODE_AREA_OF_INTEREST, "Primary", 1),
+				card("UNKNOWN_THEME", "Unknown", 2)
+		);
+		when(installationConfigService.getInstallationConfig())
+				.thenReturn(installationConfigWithCustomCards(cards, 5));
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(1L, BigDecimal.ONE));
+		when(areaOfInterestRepository.sumThemesAll())
+				.thenReturn(themes(BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(0.0, result.get(1).value());
+	}
+
+	@Test
+	void getTotalizers_WhenInstallationConfigIsNull_ShouldUseFallbackDefaults() {
+		when(installationConfigService.getInstallationConfig()).thenReturn(null);
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(2L, new BigDecimal("3")));
+
+		List<TotalizerResponse> result = totalizerService.getTotalizers(null);
+
+		assertEquals(1, result.size());
+		assertEquals(AreaOfInterestMeasuresConfigResponse.DEFAULT_LABEL, result.getFirst().unitOfMeasurement());
+	}
+
+	@Test
+	void getTotalizers_WhenFilterHasOnlyBlankIds_ShouldAggregateAll() {
+		when(areaOfInterestRepository.aggregateAll()).thenReturn(aggregate(5L, new BigDecimal("10")));
+
+		TotalizerFilterRequest filter = new TotalizerFilterRequest();
+		List<String> level2Ids = new ArrayList<>();
+		level2Ids.add(" ");
+		level2Ids.add(null);
+		level2Ids.add("");
+		filter.setLevel2Ids(level2Ids);
+		filter.setLevel3Ids(new ArrayList<>(List.of("  ")));
+
+		totalizerService.getTotalizers(filter);
+
+		verify(areaOfInterestRepository).aggregateAll();
+	}
+
+	private static InstallationConfigResponse installationConfigWithoutKpis(
+			AreaOfInterestMeasuresConfigResponse areaOfInterest
+	) {
+		return new InstallationConfigResponse(
+				List.of(),
+				null,
+				null,
+				areaOfInterest,
+				null,
+				null
+		);
+	}
+
+	private static InstallationConfigResponse installationConfigWithEmptyKpiCards() {
+		return new InstallationConfigResponse(
+				List.of(),
+				null,
+				new HomeKpisConfigResponse(5, TotalizerService.CODE_AREA_OF_INTEREST, List.of()),
+				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
+				null,
+				null
+		);
+	}
+
 	private static InstallationConfigResponse installationConfigWithThemes(
 			String label,
 			String unitOfMeasurement,
@@ -282,6 +736,38 @@ class TotalizerServiceTest {
 				null,
 				null
 		);
+	}
+
+	private static InstallationConfigResponse installationConfigWithCustomCards(
+			List<KpiCardConfigResponse> cards,
+			int maxCards
+	) {
+		return new InstallationConfigResponse(
+				List.of(),
+				null,
+				new HomeKpisConfigResponse(maxCards, TotalizerService.CODE_AREA_OF_INTEREST, cards),
+				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
+				null,
+				null
+		);
+	}
+
+	private static KpiCardConfigResponse card(String code, String label, int order) {
+		return new KpiCardConfigResponse(code, label, "ha", null, null, order, false);
+	}
+
+	private static CentroidWgs84Projection partialCentroid(Double latitude, Double longitude) {
+		return new CentroidWgs84Projection() {
+			@Override
+			public Double getLatitude() {
+				return latitude;
+			}
+
+			@Override
+			public Double getLongitude() {
+				return longitude;
+			}
+		};
 	}
 
 	private static CentroidWgs84Projection centroid(double latitude, double longitude) {

@@ -36,13 +36,12 @@ class MapConfigServiceTest {
 		MapConfigService service = new MapConfigService(properties, new ObjectMapper());
 		JsonNode config = service.getLayers();
 
-		assertTrue(config.has("groups"));
-		assertTrue(config.get("groups").isArray());
-		assertEquals("dt", config.get("groups").get(0).get("key").asText());
-		assertEquals(
-				"dsp:territory-level-1",
-				config.get("groups").get(0).get("layers").get(0).get("layers").asText()
-		);
+		assertTrue(config.has("hierarchy"));
+		assertTrue(config.get("hierarchy").isArray());
+		assertEquals("level1", config.get("hierarchy").get(0).get("key").asText());
+		assertTrue(config.has("screens"));
+		assertTrue(config.get("screens").has("home"));
+		assertEquals("AREA_OF_INTEREST", config.get("kpis").get("primaryCode").asText());
 	}
 
 	@Test

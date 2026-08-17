@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,10 +83,16 @@ class TerritoryServiceTest {
 	}
 
 	@Test
-	void getOptions_Level2WithUnknownParent_ShouldFail() {
+	void getOptions_Level2WithUnknownParent_ShouldReturnNotFound() {
 		when(level1Repository.existsById("999")).thenReturn(false);
 
-		assertThrows(ResponseStatusException.class, () -> territoryService.getOptions("level2", "999"));
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> territoryService.getOptions("level2", "999")
+		);
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+		assertEquals("Territory parent not found: 999", exception.getReason());
 	}
 
 	@Test
@@ -101,12 +109,103 @@ class TerritoryServiceTest {
 
 	@Test
 	void getOptions_Level3WithoutParent_ShouldFail() {
-		assertThrows(ResponseStatusException.class, () -> territoryService.getOptions("level3", null));
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> territoryService.getOptions("level3", null)
+		);
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+		assertEquals("parentId is required for level3", exception.getReason());
 	}
 
 	@Test
-	void getOptions_InvalidLevel_ShouldFail() {
-		assertThrows(ResponseStatusException.class, () -> territoryService.getOptions("level9", null));
+	void getOptions_InvalidLevel_ShouldReturnBadRequest() {
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> territoryService.getOptions("level9", null)
+		);
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+		assertEquals("Unsupported territory level: level9", exception.getReason());
+	}
+
+	@Test
+	void getOptions_ShouldRequireLevel() {
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> territoryService.getOptions(null, null)
+		);
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+		assertEquals("level is required", exception.getReason());
+	}
+
+	@Test
+	void getOptions_ShouldNormalizeLevelIgnoringCaseAndWhitespace() {
+		TerritoryLevel1 unit = new TerritoryLevel1();
+		unit.setId("1");
+		unit.setName("Centro-Oeste");
+		when(level1Repository.findAll()).thenReturn(List.of(unit));
+
+		List<TerritoryOptionResponse> options = territoryService.getOptions("  LEVEL1  ", null);
+
+		assertEquals(1, options.size());
+		assertEquals("1", options.getFirst().id());
+	}
+
+	@Test
+	void getOptions_Level1_ShouldSortOptionsByNameCaseInsensitive() {
+		TerritoryLevel1 south = new TerritoryLevel1();
+		south.setId("2");
+		south.setName("sul");
+
+		TerritoryLevel1 north = new TerritoryLevel1();
+		north.setId("1");
+		north.setName("Norte");
+
+		when(level1Repository.findAll()).thenReturn(List.of(south, north));
+
+		List<TerritoryOptionResponse> options = territoryService.getOptions("level1", null);
+
+		assertEquals(List.of("Norte", "sul"), options.stream().map(TerritoryOptionResponse::name).toList());
+	}
+
+	@Test
+	void getOptions_Level2WithBlankParent_ShouldReturnAllUnits() {
+		TerritoryLevel2 unit = new TerritoryLevel2();
+		unit.setId("DF");
+		unit.setName("Distrito Federal");
+		when(level2Repository.findAll()).thenReturn(List.of(unit));
+
+		List<TerritoryOptionResponse> options = territoryService.getOptions("level2", "   ");
+
+		assertEquals(1, options.size());
+		assertEquals("DF", options.getFirst().id());
+		verify(level2Repository).findAll();
+	}
+
+	@Test
+	void getOptions_Level3WithBlankParent_ShouldFail() {
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> territoryService.getOptions("level3", "   ")
+		);
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+		assertEquals("parentId is required for level3", exception.getReason());
+	}
+
+	@Test
+	void getOptions_ShouldReturnInternalServerErrorWhenRepositoryFails() {
+		when(level1Repository.findAll()).thenThrow(new RuntimeException("database unavailable"));
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				() -> territoryService.getOptions("level1", null)
+		);
+
+		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+		assertEquals("Failed to query territory options", exception.getReason());
 	}
 
 	@Test

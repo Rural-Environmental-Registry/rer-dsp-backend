@@ -1,9 +1,12 @@
 package br.car.dsp.service;
 
 import br.car.dsp.config.InstallationConfigProperties;
+import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,6 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InstallationConfigServiceTest {
 
@@ -225,5 +230,118 @@ class InstallationConfigServiceTest {
 		InstallationConfigResponse config = service.getInstallationConfig();
 
 		assertNull(config.map());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldApplyDefaultAreaUnitsWhenAreaUnitIsMissing() throws Exception {
+		Path temp = Files.createTempFile("installation-config-missing-unit", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": { "home": null, "downloads": null },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
+				  "areaOfInterest": {
+				    "areaUnit": "   ",
+				    "areaUnitLabel": ""
+				  }
+				}
+				"""
+		);
+
+		InstallationConfigResponse config = loadConfigFrom(temp);
+
+		assertEquals(AreaOfInterestMeasuresConfigResponse.DEFAULT_UNIT, config.areaOfInterest().areaUnit());
+		assertEquals(AreaOfInterestMeasuresConfigResponse.DEFAULT_LABEL, config.areaOfInterest().areaUnitLabel());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldUseAreaUnitAsLabelWhenLabelIsMissing() throws Exception {
+		Path temp = Files.createTempFile("installation-config-missing-label", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": { "home": null, "downloads": null },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
+				  "areaOfInterest": {
+				    "areaUnit": "  hectares ",
+				    "areaUnitLabel": "  "
+				  }
+				}
+				"""
+		);
+
+		InstallationConfigResponse config = loadConfigFrom(temp);
+
+		assertEquals("hectares", config.areaOfInterest().areaUnit());
+		assertEquals("hectares", config.areaOfInterest().areaUnitLabel());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldTrimAreaOfInterestUnits() throws Exception {
+		Path temp = Files.createTempFile("installation-config-trim-units", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": { "home": null, "downloads": null },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] },
+				  "areaOfInterest": {
+				    "areaUnit": "  ha ",
+				    "areaUnitLabel": "  hectares "
+				  }
+				}
+				"""
+		);
+
+		InstallationConfigResponse config = loadConfigFrom(temp);
+
+		assertEquals("ha", config.areaOfInterest().areaUnit());
+		assertEquals("hectares", config.areaOfInterest().areaUnitLabel());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldFailWhenClasspathConfigFileIsMissing() {
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile("classpath:does-not-exist-installation-config.json");
+
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				service::getInstallationConfig
+		);
+
+		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+		assertEquals("Failed to load installation config", exception.getReason());
+		assertTrue(exception.getCause().getMessage().contains("does-not-exist-installation-config.json"));
+	}
+
+	@Test
+	void getInstallationConfig_ShouldFailWhenFilesystemConfigFileIsMissing() {
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile("/tmp/does-not-exist-installation-config.json");
+
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+
+		ResponseStatusException exception = assertThrows(
+				ResponseStatusException.class,
+				service::getInstallationConfig
+		);
+
+		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+		assertEquals("Failed to load installation config", exception.getReason());
+		assertTrue(exception.getCause().getMessage().contains("does-not-exist-installation-config.json"));
+	}
+
+	private static InstallationConfigResponse loadConfigFrom(Path temp) {
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile(temp.toAbsolutePath().toString());
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+		return service.getInstallationConfig();
 	}
 }
