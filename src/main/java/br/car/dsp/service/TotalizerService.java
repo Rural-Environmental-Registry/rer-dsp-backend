@@ -19,6 +19,7 @@ import br.car.dsp.repository.AreaOfInterestRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +57,9 @@ public class TotalizerService {
 		InstallationConfigResponse config = installationConfigService.getInstallationConfig();
 		List<KpiCardConfigResponse> cards = resolveCards(config);
 		AreaOfInterestAggregate aggregate = resolveAggregate(level2Ids, level3Ids);
-		ThemeTotalsAggregate themes = resolveThemeTotals(level2Ids, level3Ids);
+		ThemeTotalsAggregate themes = needsThemeTotals(cards)
+				? resolveThemeTotals(level2Ids, level3Ids)
+				: ThemeTotalsAggregate.empty();
 
 		List<TotalizerResponse> totalizers = new ArrayList<>(cards.size());
 		for (KpiCardConfigResponse card : cards) {
@@ -134,6 +137,16 @@ public class TotalizerService {
 				areaOfInterest.getArea(),
 				otherIds != null ? otherIds : List.of()
 		);
+	}
+
+	private static boolean needsThemeTotals(List<KpiCardConfigResponse> cards) {
+		return cards.stream().anyMatch(card -> {
+			String code = card.code() == null ? "" : card.code().trim();
+			return CODE_THEME_1.equals(code)
+					|| CODE_THEME_2.equals(code)
+					|| CODE_THEME_3.equals(code)
+					|| CODE_THEME_4.equals(code);
+		});
 	}
 
 	private List<KpiCardConfigResponse> resolveCards(InstallationConfigResponse config) {
@@ -266,6 +279,13 @@ public class TotalizerService {
 	}
 
 	private static String formatDate(LocalDateTime value) {
+		if (value == null) {
+			return null;
+		}
+		return value.toLocalDate().format(ISO_DATE);
+	}
+
+	private static String formatDate(OffsetDateTime value) {
 		if (value == null) {
 			return null;
 		}

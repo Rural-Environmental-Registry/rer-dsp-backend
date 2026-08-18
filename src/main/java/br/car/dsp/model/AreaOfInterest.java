@@ -11,8 +11,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 
@@ -34,11 +36,12 @@ public class AreaOfInterest {
 	@Column(name = "id", length = 255, nullable = false)
 	private String id;
 
+	@Type(FlexibleLocalDateTimeType.class)
 	@Column(name = "registration_date", nullable = false)
 	private LocalDateTime registrationDate;
 
-	@Column(name = "alteration_date")
-	private LocalDateTime alterationDate;
+	@Column(name = "updated_at")
+	private OffsetDateTime alterationDate;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = true)
 	@JoinColumn(
@@ -52,19 +55,15 @@ public class AreaOfInterest {
 	@Column(name = "area")
 	private BigDecimal area;
 
-	/** Optional KPI slot THEME_1 (label from installation-config). */
 	@Column(name = "theme_1")
 	private BigDecimal theme1;
 
-	/** Optional KPI slot THEME_2. */
 	@Column(name = "theme_2")
 	private BigDecimal theme2;
 
-	/** Optional KPI slot THEME_3. */
 	@Column(name = "theme_3")
 	private BigDecimal theme3;
 
-	/** Optional KPI slot THEME_4. */
 	@Column(name = "theme_4")
 	private BigDecimal theme4;
 

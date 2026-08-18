@@ -39,7 +39,7 @@ class GeoServerWfsClientTest {
 		String url = GeoServerWfsClient.buildLatestAttributeValueUrl(WFS_BASE_URL, TYPE_NAME, CQL_FILTER);
 
 		assertTrue(url.contains("sortBy="));
-		assertTrue(url.contains("alteration_date"));
+		assertTrue(url.contains("updated_at"));
 		assertTrue(url.contains("count=1"));
 		assertTrue(url.contains("propertyName="));
 		assertTrue(url.contains("outputFormat="));
@@ -55,7 +55,7 @@ class GeoServerWfsClientTest {
 				    {
 				      "type": "Feature",
 				      "properties": {
-				        "alteration_date": "2024-06-15T10:30:00Z"
+				        "updated_at": "2024-06-15T10:30:00Z"
 				      }
 				    }
 				  ]

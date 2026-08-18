@@ -16,6 +16,8 @@ import br.car.dsp.model.TerritoryLevel3;
 import br.car.dsp.repository.AreaOfInterestRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -841,7 +843,7 @@ class TotalizerServiceTest {
 		AreaOfInterest areaOfInterest = new AreaOfInterest();
 		areaOfInterest.setId("DF-123");
 		areaOfInterest.setRegistrationDate(LocalDateTime.of(2020, 1, 10, 8, 30));
-		areaOfInterest.setAlterationDate(LocalDateTime.of(2024, 6, 15, 14, 0));
+		areaOfInterest.setAlterationDate(OffsetDateTime.of(2024, 6, 15, 14, 0, 0, 0, ZoneOffset.UTC));
 		areaOfInterest.setArea(new BigDecimal("120.50"));
 		areaOfInterest.setTerritoryLevel3(level3);
 		areaOfInterest.setCentroidCoordinates(
