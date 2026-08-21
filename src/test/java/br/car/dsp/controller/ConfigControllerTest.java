@@ -6,6 +6,8 @@ import br.car.dsp.dto.HierarchyLevelConfigResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
 import br.car.dsp.dto.KpiCardConfigResponse;
+import br.car.dsp.dto.HomeDetailSearchConfigResponse;
+import br.car.dsp.dto.HomeScreenConfigResponse;
 import br.car.dsp.dto.ScreenConfigResponse;
 import br.car.dsp.dto.ScreensConfigResponse;
 import br.car.dsp.service.InstallationConfigService;
@@ -37,7 +39,7 @@ class ConfigControllerTest {
 		InstallationConfigResponse expected = new InstallationConfigResponse(
 				List.of(new HierarchyLevelConfigResponse("level1", "Level 1", "Select level 1", 1)),
 				new ScreensConfigResponse(
-						new ScreenConfigResponse(
+						new HomeScreenConfigResponse(
 								"Browse registered data",
 								List.of("level2", "level3"),
 								null,
@@ -50,7 +52,6 @@ class ConfigControllerTest {
 						new ScreenConfigResponse(
 								"Download public data",
 								List.of("level1", "level2", "level3"),
-								null,
 								null,
 								null,
 								null,

@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -47,7 +48,21 @@ class InstallationConfigServiceTest {
 		assertEquals("Search details", config.screens().home().detail().sectionTitle());
 		assertEquals("Area of interest data", config.screens().home().detail().areaOfInterestSectionTitle());
 		assertEquals("Registration date", config.screens().home().detail().registrationDateLabel());
+		assertEquals(List.of(), config.screens().home().detail().fields());
 		assertFalse(config.hierarchy().isEmpty());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldNotExposeDetailOnDownloadsScreen() {
+		InstallationConfigProperties properties = new InstallationConfigProperties();
+		properties.setFile("classpath:installation-config-test.json");
+
+		InstallationConfigService service = new InstallationConfigService(properties, new ObjectMapper());
+
+		InstallationConfigResponse config = service.getInstallationConfig();
+
+		assertNotNull(config.screens().downloads());
+		assertEquals("Download public data", config.screens().downloads().title());
 	}
 
 	@Test
@@ -66,9 +81,53 @@ class InstallationConfigServiceTest {
 		assertEquals("Detalhes da consulta", config.screens().home().detail().sectionTitle());
 		assertEquals("Dados da área de interesse", config.screens().home().detail().areaOfInterestSectionTitle());
 		assertEquals("Data de registro", config.screens().home().detail().registrationDateLabel());
+		assertEquals(List.of(), config.screens().home().detail().fields());
 		assertEquals("ha", config.areaOfInterest().areaUnit());
 		assertEquals("ha", config.areaOfInterest().areaUnitLabel());
 		assertEquals("dd/MM/yyyy", config.formats().date());
+	}
+
+	@Test
+	void getInstallationConfig_ShouldLoadDetailFieldsMixingColumnAndCalculated() throws Exception {
+		Path temp = Files.createTempFile("installation-config-detail-fields", ".json");
+		Files.writeString(
+				temp,
+				"""
+				{
+				  "hierarchy": [],
+				  "screens": {
+				    "home": {
+				      "title": "Home",
+				      "hierarchyKeys": ["level2"],
+				      "detail": {
+				        "sectionTitle": "Search details",
+				        "areaOfInterestSectionTitle": "Area of interest data",
+				        "registrationDateLabel": "Registration date",
+				        "alterationDateLabel": "Alteration date",
+				        "latitudeLabel": "Latitude",
+				        "longitudeLabel": "Longitude",
+				        "areaLabel": "Area",
+				        "featuresDownloadLabel": "Download features",
+				        "fields": [
+				          { "field": "nome", "label": "Property name" },
+				          { "field": "calculated.latitude", "label": "Centroid latitude" }
+				        ]
+				      }
+				    },
+				    "downloads": null
+				  },
+				  "kpis": { "maxCards": 1, "primaryCode": "AREA_OF_INTEREST", "cards": [] }
+				}
+				"""
+		);
+
+		InstallationConfigResponse config = loadConfigFrom(temp);
+
+		assertEquals(2, config.screens().home().detail().fields().size());
+		assertEquals("nome", config.screens().home().detail().fields().getFirst().field());
+		assertEquals("Property name", config.screens().home().detail().fields().getFirst().label());
+		assertEquals("calculated.latitude", config.screens().home().detail().fields().get(1).field());
+		assertEquals("Centroid latitude", config.screens().home().detail().fields().get(1).label());
 	}
 
 	@Test

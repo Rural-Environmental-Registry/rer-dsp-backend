@@ -4,9 +4,13 @@ import br.car.dsp.dto.AreaOfInterestAggregate;
 import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
 import br.car.dsp.dto.CentroidWgs84Projection;
 import br.car.dsp.dto.DetailByIdentifierResponse;
+import br.car.dsp.dto.DetailFieldConfigResponse;
+import br.car.dsp.dto.HomeDetailSearchConfigResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
 import br.car.dsp.dto.KpiCardConfigResponse;
+import br.car.dsp.dto.HomeScreenConfigResponse;
+import br.car.dsp.dto.ScreensConfigResponse;
 import br.car.dsp.dto.TerritoryLevelRefResponse;
 import br.car.dsp.dto.TerritoryLevelsResponse;
 import br.car.dsp.dto.ThemeTotalsAggregate;
@@ -23,8 +27,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,8 +52,23 @@ public class TotalizerService {
 
 	private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
 
+	private static final Set<String> CANONICAL_AOI_DETAIL_FIELDS = Set.of(
+			"id",
+			"registration_date",
+			"updated_at",
+			"area"
+	);
+
+	private static final Set<String> CALCULATED_AOI_DETAIL_FIELDS = Set.of(
+			"calculated.latitude",
+			"calculated.longitude",
+			"calculated.territory_level_2_name",
+			"calculated.territory_level_3_name"
+	);
+
 	private final AreaOfInterestRepository areaOfInterestRepository;
 	private final InstallationConfigService installationConfigService;
+	private final AreaOfInterestAttributeReader areaOfInterestAttributeReader;
 
 	@Transactional(readOnly = true)
 	public List<TotalizerResponse> getTotalizers(TotalizerFilterRequest filter) {
@@ -81,7 +103,7 @@ public class TotalizerService {
 				));
 
 		Centroid centroid = resolveCentroid(areaOfInterestRepository.findCentroidWgs84(areaOfInterest.getId()));
-		return toDetailResponse(areaOfInterest, centroid, List.of());
+		return toDetailResponse(areaOfInterest, centroid, List.of(), detailFields());
 	}
 
 	@Transactional(readOnly = true)
@@ -108,13 +130,14 @@ public class TotalizerService {
 				));
 
 		Centroid centroid = resolveCentroid(areaOfInterestRepository.findCentroidWgs84(areaOfInterest.getId()));
-		return toDetailResponse(areaOfInterest, centroid, otherIds);
+		return toDetailResponse(areaOfInterest, centroid, otherIds, detailFields());
 	}
 
-	private static DetailByIdentifierResponse toDetailResponse(
+	private DetailByIdentifierResponse toDetailResponse(
 			AreaOfInterest areaOfInterest,
 			Centroid centroid,
-			List<String> otherIds
+			List<String> otherIds,
+			List<DetailFieldConfigResponse> fields
 	) {
 		TerritoryLevel3 level3 = areaOfInterest.getTerritoryLevel3();
 		TerritoryLevel2 level2 = level3 != null ? level3.getParent() : null;
@@ -132,8 +155,88 @@ public class TotalizerService {
 				formatDate(areaOfInterest.getRegistrationDate()),
 				formatDate(areaOfInterest.getAlterationDate()),
 				areaOfInterest.getArea(),
-				otherIds != null ? otherIds : List.of()
+				otherIds != null ? otherIds : List.of(),
+				resolveAttributes(areaOfInterest, centroid, level2, level3, fields)
 		);
+	}
+
+	private List<DetailFieldConfigResponse> detailFields() {
+		InstallationConfigResponse config = installationConfigService.getInstallationConfig();
+		ScreensConfigResponse screens = config != null ? config.screens() : null;
+		HomeScreenConfigResponse home = screens != null ? screens.home() : null;
+		HomeDetailSearchConfigResponse detail = home != null ? home.detail() : null;
+		if (detail == null || detail.fields() == null || detail.fields().isEmpty()) {
+			return List.of();
+		}
+		return detail.fields();
+	}
+
+	private Map<String, Object> resolveAttributes(
+			AreaOfInterest areaOfInterest,
+			Centroid centroid,
+			TerritoryLevel2 level2,
+			TerritoryLevel3 level3,
+			List<DetailFieldConfigResponse> fields
+	) {
+		if (fields == null || fields.isEmpty()) {
+			return Map.of();
+		}
+
+		List<String> extras = fields.stream()
+				.map(DetailFieldConfigResponse::field)
+				.filter(TotalizerService::isExtraColumn)
+				.toList();
+		Map<String, Object> extraValues = extras.isEmpty()
+				? Map.of()
+				: areaOfInterestAttributeReader.read(areaOfInterest.getId(), extras);
+
+		LinkedHashMap<String, Object> attributes = new LinkedHashMap<>();
+		for (DetailFieldConfigResponse item : fields) {
+			String field = item != null ? item.field() : null;
+			if (field == null || field.isBlank()) {
+				continue;
+			}
+			if (field.startsWith("calculated.") && !CALCULATED_AOI_DETAIL_FIELDS.contains(field)) {
+				continue;
+			}
+			attributes.put(field, attributeValue(
+					field,
+					areaOfInterest,
+					centroid,
+					level2,
+					level3,
+					extraValues
+			));
+		}
+		return attributes;
+	}
+
+	private static Object attributeValue(
+			String field,
+			AreaOfInterest areaOfInterest,
+			Centroid centroid,
+			TerritoryLevel2 level2,
+			TerritoryLevel3 level3,
+			Map<String, Object> extraValues
+	) {
+		return switch (field) {
+			case "id" -> areaOfInterest.getId();
+			case "registration_date" -> formatDate(areaOfInterest.getRegistrationDate());
+			case "updated_at" -> formatDate(areaOfInterest.getAlterationDate());
+			case "area" -> areaOfInterest.getArea();
+			case "calculated.latitude" -> centroid.latitude();
+			case "calculated.longitude" -> centroid.longitude();
+			case "calculated.territory_level_2_name" -> level2 != null ? level2.getName() : null;
+			case "calculated.territory_level_3_name" -> level3 != null ? level3.getName() : null;
+			default -> extraValues.get(field);
+		};
+	}
+
+	private static boolean isExtraColumn(String field) {
+		if (field == null || field.isBlank() || field.startsWith("calculated.")) {
+			return false;
+		}
+		return !CANONICAL_AOI_DETAIL_FIELDS.contains(field);
 	}
 
 	private List<KpiCardConfigResponse> resolveCards(InstallationConfigResponse config) {

@@ -5,17 +5,23 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
 /**
- * Screen filter configuration shared by Home and Downloads.
- * Home adds {@link HomeScreenConfigResponse#detail()}; Downloads has no detail panel.
+ * Home screen filter configuration, including the AOI detail panel labels and fields.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record ScreenConfigResponse(
+public record HomeScreenConfigResponse(
 		String title,
 		List<String> hierarchyKeys,
 		ScreenFieldConfigResponse identifier,
 		ScreenFieldConfigResponse theme,
 		String level1SectionTitle,
 		String level2SectionTitle,
-		String filterByTitle
+		String filterByTitle,
+		HomeDetailSearchConfigResponse detail
 ) {
+
+	public HomeScreenConfigResponse {
+		if (detail == null) {
+			detail = HomeDetailSearchConfigResponse.defaults();
+		}
+	}
 }

@@ -17,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class GeoServerWfsClient {
 
-	public static final String LAST_UPDATE_ATTRIBUTE = "alteration_date";
+	public static final String LAST_UPDATE_ATTRIBUTE = "updated_at";
 
 	private final ObjectMapper objectMapper;
 	private final RestClient restClient;

@@ -37,7 +37,7 @@ public class AreaOfInterest {
 	@Column(name = "registration_date", nullable = false)
 	private LocalDateTime registrationDate;
 
-	@Column(name = "alteration_date")
+	@Column(name = "updated_at")
 	private LocalDateTime alterationDate;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = true)
