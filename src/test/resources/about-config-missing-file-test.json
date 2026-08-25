@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "defaultTabId": "overview",
+  "bannerTitle": "About Test",
+  "tabs": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "file": "does-not-exist.md"
+    }
+  ]
+}

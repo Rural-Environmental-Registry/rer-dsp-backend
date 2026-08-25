@@ -1,5 +1,7 @@
 package br.car.dsp.dto;
 
+import java.util.List;
+
 public record HomeDetailSearchConfigResponse(
 		String sectionTitle,
 		String areaOfInterestSectionTitle,
@@ -8,8 +10,13 @@ public record HomeDetailSearchConfigResponse(
 		String latitudeLabel,
 		String longitudeLabel,
 		String areaLabel,
-		String featuresDownloadLabel
+		String featuresDownloadLabel,
+		List<DetailFieldConfigResponse> fields
 ) {
+
+	public HomeDetailSearchConfigResponse {
+		fields = fields == null ? List.of() : List.copyOf(fields);
+	}
 
 	public static HomeDetailSearchConfigResponse defaults() {
 		return new HomeDetailSearchConfigResponse(
@@ -20,7 +27,8 @@ public record HomeDetailSearchConfigResponse(
 				"Latitude",
 				"Longitude",
 				"Area",
-				"Download features"
+				"Download features",
+				List.of()
 		);
 	}
 }

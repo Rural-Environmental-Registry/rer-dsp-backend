@@ -4,9 +4,15 @@ import br.car.dsp.dto.AreaOfInterestAggregate;
 import br.car.dsp.dto.AreaOfInterestMeasuresConfigResponse;
 import br.car.dsp.dto.CentroidWgs84Projection;
 import br.car.dsp.dto.DetailByIdentifierResponse;
+import br.car.dsp.dto.DetailFieldConfigResponse;
+import br.car.dsp.dto.HomeDetailSearchConfigResponse;
 import br.car.dsp.dto.HomeKpisConfigResponse;
 import br.car.dsp.dto.InstallationConfigResponse;
 import br.car.dsp.dto.KpiCardConfigResponse;
+import br.car.dsp.dto.HomeDetailSearchConfigResponse;
+import br.car.dsp.dto.HomeScreenConfigResponse;
+import br.car.dsp.dto.ScreenConfigResponse;
+import br.car.dsp.dto.ScreensConfigResponse;
 import br.car.dsp.dto.ThemeTotalsAggregate;
 import br.car.dsp.dto.TotalizerFilterRequest;
 import br.car.dsp.dto.TotalizerResponse;
@@ -21,6 +27,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +52,7 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +64,9 @@ class TotalizerServiceTest {
 
 	@Mock
 	private InstallationConfigService installationConfigService;
+
+	@Mock
+	private AreaOfInterestAttributeReader areaOfInterestAttributeReader;
 
 	@InjectMocks
 	private TotalizerService totalizerService;
@@ -183,6 +194,29 @@ class TotalizerServiceTest {
 		assertNotNull(result.latitude());
 		assertNotNull(result.longitude());
 		assertEquals(List.of(), result.otherIds());
+		assertEquals(Map.of(), result.attributes());
+		verify(areaOfInterestAttributeReader, never()).read(anyString(), anyCollection());
+	}
+
+	@Test
+	void getDetailByIdentifier_WhenFieldsConfigured_ShouldResolveAttributesInOrder() {
+		AreaOfInterest areaOfInterest = buildSampleAreaOfInterest();
+		when(areaOfInterestRepository.findById("DF-123")).thenReturn(Optional.of(areaOfInterest));
+		when(installationConfigService.getInstallationConfig()).thenReturn(installationConfigWithDetailFields(
+				new DetailFieldConfigResponse("id", "Identifier"),
+				new DetailFieldConfigResponse("nome", "Property name"),
+				new DetailFieldConfigResponse("calculated.latitude", "Centroid latitude")
+		));
+		when(areaOfInterestAttributeReader.read("DF-123", List.of("nome")))
+				.thenReturn(Map.of("nome", "Sample property"));
+
+		DetailByIdentifierResponse result = totalizerService.getDetailByIdentifier("DF-123");
+
+		assertEquals(List.of("id", "nome", "calculated.latitude"), List.copyOf(result.attributes().keySet()));
+		assertEquals("DF-123", result.attributes().get("id"));
+		assertEquals("Sample property", result.attributes().get("nome"));
+		assertEquals(result.latitude(), result.attributes().get("calculated.latitude"));
+		verify(areaOfInterestAttributeReader).read("DF-123", List.of("nome"));
 	}
 
 	@Test
@@ -737,6 +771,46 @@ class TotalizerServiceTest {
 				new AreaOfInterestMeasuresConfigResponse("ha", "ha"),
 				null,
 				null
+		);
+	}
+
+	private static InstallationConfigResponse installationConfigWithDetailFields(
+			DetailFieldConfigResponse... fields
+	) {
+		InstallationConfigResponse base = installationConfigWithThemes(
+				"Registered properties",
+				"un.",
+				"ha"
+		);
+		return new InstallationConfigResponse(
+				base.hierarchy(),
+				new ScreensConfigResponse(
+						new HomeScreenConfigResponse(
+								"Browse registered data",
+								List.of("level2", "level3"),
+								null,
+								null,
+								null,
+								null,
+								null,
+								new HomeDetailSearchConfigResponse(
+										"Search details",
+										"Area of interest data",
+										"Registration date",
+										"Alteration date",
+										"Latitude",
+										"Longitude",
+										"Area",
+										"Download features",
+										List.of(fields)
+								)
+						),
+						null
+				),
+				base.kpis(),
+				base.areaOfInterest(),
+				base.formats(),
+				base.map()
 		);
 	}
 

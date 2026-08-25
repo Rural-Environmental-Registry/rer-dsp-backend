@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -52,7 +53,8 @@ class TotalizerControllerTest {
 				"2020-01-10",
 				"2024-06-15",
 				new BigDecimal("120.50"),
-				List.of()
+				List.of(),
+				Map.of()
 		);
 	}
 
