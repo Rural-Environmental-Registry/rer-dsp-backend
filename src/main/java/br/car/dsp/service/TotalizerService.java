@@ -55,7 +55,7 @@ public class TotalizerService {
 
 	private static final Set<String> CANONICAL_AOI_DETAIL_FIELDS = Set.of(
 			"id",
-			"registration_date",
+			"created_at",
 			"updated_at",
 			"area"
 	);
@@ -79,9 +79,7 @@ public class TotalizerService {
 		InstallationConfigResponse config = installationConfigService.getInstallationConfig();
 		List<KpiCardConfigResponse> cards = resolveCards(config);
 		AreaOfInterestAggregate aggregate = resolveAggregate(level2Ids, level3Ids);
-		ThemeTotalsAggregate themes = needsThemeTotals(cards)
-				? resolveThemeTotals(level2Ids, level3Ids)
-				: ThemeTotalsAggregate.empty();
+		ThemeTotalsAggregate themes = resolveThemeTotals(level2Ids, level3Ids);
 
 		List<TotalizerResponse> totalizers = new ArrayList<>(cards.size());
 		for (KpiCardConfigResponse card : cards) {
@@ -224,7 +222,7 @@ public class TotalizerService {
 	) {
 		return switch (field) {
 			case "id" -> areaOfInterest.getId();
-			case "registration_date" -> formatDate(areaOfInterest.getRegistrationDate());
+			case "created_at" -> formatDate(areaOfInterest.getRegistrationDate());
 			case "updated_at" -> formatDate(areaOfInterest.getAlterationDate());
 			case "area" -> areaOfInterest.getArea();
 			case "calculated.latitude" -> centroid.latitude();
@@ -379,13 +377,6 @@ public class TotalizerService {
 			return null;
 		}
 		return new TerritoryLevelRefResponse(id, name);
-	}
-
-	private static String formatDate(LocalDateTime value) {
-		if (value == null) {
-			return null;
-		}
-		return value.toLocalDate().format(ISO_DATE);
 	}
 
 	private static String formatDate(OffsetDateTime value) {
