@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "bannerTitle": "About Test",
+  "tabs": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "file": "overview.md"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+package br.car.dsp.dto;
+
+import java.util.List;
+
+public record InstallationConfigResponse(
+		List<HierarchyLevelConfigResponse> hierarchy,
+		ScreensConfigResponse screens,
+		HomeKpisConfigResponse kpis,
+		AreaOfInterestMeasuresConfigResponse areaOfInterest,
+		FormatsConfigResponse formats,
+		MapUiConfigResponse map
+) {
+
+	public InstallationConfigResponse {
+		if (areaOfInterest == null) {
+			areaOfInterest = AreaOfInterestMeasuresConfigResponse.defaults();
+		}
+		if (formats == null) {
+			formats = FormatsConfigResponse.defaults();
+		}
+	}
+}

@@ -1,0 +1,83 @@
+{
+  "hierarchy": [
+    {
+      "key": "level1",
+      "label": "Região",
+      "placeholder": "Selecione a região",
+      "order": 1
+    },
+    {
+      "key": "level2",
+      "label": "Estado",
+      "placeholder": "Selecione o estado",
+      "order": 2
+    },
+    {
+      "key": "level3",
+      "label": "Município",
+      "placeholder": "Selecione o município",
+      "order": 3
+    }
+  ],
+  "screens": {
+    "home": {
+      "title": "Consultar dados cadastrados",
+      "hierarchyKeys": ["level2", "level3"],
+      "identifier": {
+        "key": "identifier",
+        "label": "Identificador",
+        "placeholder": "Informe o identificador"
+      },
+      "theme": null,
+      "level1SectionTitle": null,
+      "level2SectionTitle": null,
+      "filterByTitle": null,
+      "detail": {
+        "sectionTitle": "Detalhes da consulta",
+        "areaOfInterestSectionTitle": "Dados da área de interesse",
+        "registrationDateLabel": "Data de registro",
+        "alterationDateLabel": "Data de alteração",
+        "latitudeLabel": "Latitude",
+        "longitudeLabel": "Longitude",
+        "areaLabel": "Área",
+        "featuresDownloadLabel": "Baixar feições"
+      }
+    },
+    "downloads": {
+      "title": "Baixar dados públicos",
+      "hierarchyKeys": ["level1", "level2", "level3"],
+      "identifier": null,
+      "theme": {
+        "key": "theme",
+        "label": "Tema",
+        "placeholder": "Todos os temas"
+      },
+      "level1SectionTitle": "Selecione o nível 1 para Downloads",
+      "level2SectionTitle": "Opções do nível 1 selecionado",
+      "filterByTitle": "Filtrar por:"
+    }
+  },
+  "kpis": {
+    "maxCards": 5,
+    "primaryCode": "AREA_OF_INTEREST",
+    "cards": [
+      {
+        "code": "AREA_OF_INTEREST",
+        "label": "Imóveis cadastrados",
+        "unitOfMeasurement": "un.",
+        "optionalLabel": "ha",
+        "accentColor": "#CED6E5",
+        "order": 1,
+        "required": true
+      }
+    ]
+  },
+  "areaOfInterest": {
+    "areaUnit": "ha",
+    "areaUnitLabel": "ha"
+  },
+  "formats": {
+    "date": "dd/MM/yyyy",
+    "dateTime": "dd/MM/yyyy HH:mm:ss"
+  }
+}
