@@ -1,0 +1,4 @@
+{
+  "wfsBaseUrl": "http://localhost:22669/geoserver/dsp/wfs",
+  "themes": []
+}

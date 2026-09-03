@@ -1,46 +1,44 @@
-# RER DSP — Backend
+# rer-dsp-backend
 
-**Projeto**: Rural Environmental Registry — Data Sharing Platform  
-**Componente**: Backend (API REST)  
-**Tipo**: Digital Public Good (DPG)  
-**Licença**: GPL-3.0
+> Este repositório é um dos módulos do **DSP (Data Sharing Platform)**, parte do ecossistema RER.
+> A documentação completa do projeto está em **[rer-dsp-docs](https://github.com/Rural-Environmental-Registry/rer-dsp-docs)**.
+> As informações abaixo tratam apenas deste módulo, não do projeto DSP como um todo.
 
----
+## Qual parte do DSP este módulo é
 
-## 📋 Visão Geral
+```mermaid
+flowchart LR
+    Core[rer-dsp-core]
+    Backend((rer-dsp-backend))
+    Frontend[rer-dsp-frontend]
 
-Serviço backend da plataforma DSP do RER. Expõe APIs REST para acesso e compartilhamento de dados ambientais rurais entre instituições parceiras.
-
-## 🏗️ Arquitetura
-
-Este componente faz parte do ecossistema RER DSP:
-
-```
-rer-dsp-frontend (UI)
-    ↓
-rer-dsp-backend  ← ESTE REPO
-    ↓
-rer-dsp-core (lógica de domínio)
-    ↓
-rer-dsp-job-data-migration (ETL)
-rer-dsp-job-geo-file-generation (geoespacial)
+    Core -- config/schema --> Backend
+    Backend -- API REST --> Frontend
 ```
 
-## 🚀 Setup
+## Objetivo
+
+API REST que expõe dados ambientais e geoespaciais para compartilhamento entre
+instituições parceiras do RER.
+
+## Responsabilidades
+
+- Expor endpoints REST para consulta e compartilhamento de dados
+- Persistir e consultar dados geoespaciais (PostGIS)
+- Ler a configuração de instalação gerada pelo `rer-dsp-core`
+
+## Tecnologias
+
+Java 21, Spring Boot 3.4.2, PostgreSQL/PostGIS, Gradle.
+
+## Como executar
 
 ```bash
-# Clonar
-git clone https://github.com/Rural-Environmental-Registry/rer-dsp-backend.git
-cd rer-dsp-backend
-
-# Instruções de build serão adicionadas conforme desenvolvimento
+./gradlew bootRun
 ```
 
-## 📖 Documentação
+Ou, preferencialmente, via `rer-dsp-core` (`./start.sh`), que sobe toda a stack.
 
-- [RER — Visão Geral](https://github.com/Rural-Environmental-Registry)
-- [SDD (System Design Document)](https://github.com/Rural-Environmental-Registry/core)
+## Licença
 
-## 📜 Licença
-
-Este projeto é licenciado sob a [GNU General Public License v3.0](LICENSE).
+[GNU General Public License v3.0](LICENSE)

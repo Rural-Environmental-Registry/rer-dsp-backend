@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "bannerTitle": "About Test",
+  "tabs": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "file": "overview.md"
+    },
+    {
+      "id": "license",
+      "label": "License",
+      "file": "license.md"
+    }
+  ]
+}
